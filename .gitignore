@@ -1,0 +1,37 @@
+# BoobsOS — .gitignore
+
+# Artefakty generowania ISO / obrazów dysków
+*.iso
+*.qcow2
+*.raw
+*.vmdk
+*.vhd
+*.vhdx
+output/
+
+# Artefakty buildah/podman
+.buildah-cache/
+containers-storage/
+
+# Pliki tymczasowe systemu
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+*.bak
+*.orig
+
+# Logi i debug
+*.log
+*.tmp
+
+# Środowisko lokalne / sekrety
+.env
+.env.local
+secrets/
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace

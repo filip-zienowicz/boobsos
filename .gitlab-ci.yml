@@ -1,0 +1,66 @@
+# BoobsOS — GitLab CI/CD Pipeline
+#
+# Etapy:
+#   build — buduje obraz OCI z Containerfile i publikuje do GitLab Container Registry
+#
+# Zmienne dostępne automatycznie w GitLab CI:
+#   CI_REGISTRY             — adres rejestru (np. registry.gitlab.com)
+#   CI_REGISTRY_IMAGE       — pełna ścieżka obrazu (np. registry.gitlab.com/org/boobsos)
+#   CI_REGISTRY_USER        — użytkownik do logowania (gitlab-ci-token)
+#   CI_REGISTRY_PASSWORD    — hasło (job token)
+#   CI_COMMIT_SHORT_SHA     — krótki hash commita (7 znaków)
+#   CI_DEFAULT_BRANCH       — domyślna gałąź (zwykle "main")
+
+stages:
+  - build
+
+variables:
+  # Buildah: używaj storage w katalogu roboczym (nie wymaga uprawnień systemowych)
+  BUILDAH_FORMAT: docker
+  STORAGE_DRIVER: vfs
+
+build-image:
+  stage: build
+  # Stabilny obraz buildah z quay.io — zawiera buildah + skopeo
+  image: quay.io/buildah/stable:latest
+
+  # Potrzebujemy uprawnień do budowania obrazów OCI
+  variables:
+    BUILDAH_ISOLATION: chroot
+
+  script:
+    # Logowanie do GitLab Container Registry
+    - echo "==> Logowanie do rejestru ${CI_REGISTRY} ..."
+    - buildah login
+        --username "${CI_REGISTRY_USER}"
+        --password "${CI_REGISTRY_PASSWORD}"
+        "${CI_REGISTRY}"
+
+    # Budowanie obrazu z Containerfile
+    - echo "==> Budowanie obrazu BoobsOS ..."
+    - buildah build
+        --tag "${CI_REGISTRY_IMAGE}:latest"
+        --tag "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+        --file Containerfile
+        .
+
+    # Push do rejestru — tylko na domyślnej gałęzi (main)
+    - |
+      if [ "${CI_COMMIT_BRANCH}" = "${CI_DEFAULT_BRANCH}" ]; then
+        echo "==> Gałąź główna — wypychanie obrazu do rejestru ..."
+        buildah push "${CI_REGISTRY_IMAGE}:latest"
+        buildah push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+        echo "==> Push OK: ${CI_REGISTRY_IMAGE}:latest i :${CI_COMMIT_SHORT_SHA}"
+      else
+        echo "==> Nie-główna gałąź (${CI_COMMIT_BRANCH}) — pomijam push, tylko build."
+      fi
+
+  # Cache warstw buildah między jobami (opcjonalne, przyspiesza buildy)
+  cache:
+    key: buildah-cache
+    paths:
+      - .buildah-cache/
+
+  # Uruchamiaj tylko przy push (nie przy MR z zewnątrz)
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
