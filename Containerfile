@@ -31,9 +31,13 @@ RUN sed -i \
         -e 's|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://boobsos.example.com/docs"|' \
         -e 's|^SUPPORT_URL=.*|SUPPORT_URL="https://boobsos.example.com/support"|' \
         -e 's|^BUG_REPORT_URL=.*|BUG_REPORT_URL="https://gitlab.example.com/boobsos/boobsos/-/issues"|' \
+        -e 's|^CPE_NAME=.*|CPE_NAME="cpe:/o:boobsos:boobsos:44"|' \
         /usr/lib/os-release \
     && grep -E '^(NAME|PRETTY_NAME|ID|ID_LIKE)' /usr/lib/os-release \
     && echo "os-release: rebranding OK"
+# CPE_NAME fallback — dodaj jeśli nie istniało w base image
+RUN grep -q '^CPE_NAME=' /usr/lib/os-release \
+    || echo 'CPE_NAME="cpe:/o:boobsos:boobsos:44"' >> /usr/lib/os-release
 
 # Dodaj VARIANT jeśli go nie ma (base-main może nie mieć VARIANT)
 RUN grep -q '^VARIANT=' /usr/lib/os-release \
@@ -601,6 +605,148 @@ RUN systemctl enable firewalld.service \
     && systemctl enable auditd.service \
     && systemctl enable logrotate.timer \
     && echo "Usługi bezpieczeństwa: firewalld auditd logrotate.timer — enabled"
+
+# ---------------------------------------------------------------------------
+# F2.15: Domyślne configi (neovim + oh-my-zsh)
+#
+# Cel: każdy nowy użytkownik tworzony przez useradd -m (np. 'boobs' w
+# Containerfile.vm) dostaje gotowe dotfiles z /etc/skel out-of-the-box.
+#
+# Co nakładamy przez COPY files/ / (wykonany wcześniej na początku Containerfile):
+#   files/etc/skel/.config/nvim/init.lua  — config neovim (lazy.nvim bootstrap,
+#       LSP/mason/treesitter/telescope). Pluginy + LSP instalują się przy 1. starcie.
+#   files/etc/skel/.zshrc                 — config zsh (oh-my-zsh, theme ys,
+#       plugins: git zsh-autosuggestions zsh-syntax-highlighting, aliasy ls/bat)
+#
+# Oh-my-zsh framework + pluginy: klonujemy do /etc/skel/.oh-my-zsh w buildzie,
+# bo skrypt instalacyjny wymaga sieci i runtime usera. useradd -m skopiuje
+# cały katalog .oh-my-zsh do $HOME nowego usera. .zshrc odwołuje się do
+# $HOME/.oh-my-zsh — działa po skopiowaniu bez żadnych zmian.
+#
+# Katalogi .git usuwamy (slim — nie potrzebujemy historii w obrazie produkcyjnym).
+#
+# nodejs22 + nodejs22-npm: wymagane przez Mason (instalator LSP-ów przez npm).
+# Fedora 44 nie ma generycznych pakietów 'nodejs'/'npm' — używamy nodejs22
+# (LTS aktywne; nodejs20 i nodejs24 też dostępne, ale 22 = current LTS w F44).
+# gcc/make/python3-pip: już w obrazie (F2.10 @development-tools + python3-pip).
+# ripgrep/fd-find: już w obrazie (F2.8).
+# ---------------------------------------------------------------------------
+RUN dnf install -y \
+    nodejs22 \
+    nodejs22-npm \
+    && dnf clean all
+
+RUN git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh /etc/skel/.oh-my-zsh \
+    && git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
+       /etc/skel/.oh-my-zsh/custom/plugins/zsh-autosuggestions \
+    && git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
+       /etc/skel/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting \
+    # Usuń katalogi .git (slim — oszczędność miejsca, niezbędne tylko przy aktualizacji)
+    && find /etc/skel/.oh-my-zsh -name .git -type d -prune -exec rm -rf {} + \
+    # Upewnij się że /etc/skel jest czytelny dla wszystkich (standardowe uprawnienia)
+    && chmod -R a+rX /etc/skel \
+    && echo "oh-my-zsh + plugins: OK" \
+    && echo "skel files:" && find /etc/skel -type f | sort
+
+# ---------------------------------------------------------------------------
+# F4.1: Google Chrome + Brave Browser
+#
+# Repozytoria third-party:
+#   files/etc/yum.repos.d/google-chrome.repo  → Google Chrome Stable
+#   files/etc/yum.repos.d/brave-browser.repo  → Brave Browser
+# (nakładane przez COPY files/ / na początku Containerfile)
+#
+# Desktop ID po instalacji (zweryfikowane przez dnf repoquery --list):
+#   google-chrome → /usr/share/applications/google-chrome.desktop
+#                   /usr/share/applications/com.google.Chrome.desktop
+#   brave-browser → /usr/share/applications/brave-browser.desktop
+#                   /usr/share/applications/com.brave.Browser.desktop
+#
+# Pasek zadań: Brave JEST przypięty (patrz F4.3 dconf); Chrome jest zainstalowany
+# ale NIE przypięty. Firefox jest zainstalowany ale NIE przypięty.
+#
+# Dry-run (dnf --assumeno) zweryfikowany:
+#   google-chrome-stable 149.0.7827.114-1  → OK
+#   brave-browser 1.91.172-1               → OK (+ brave-keyring dep)
+# ---------------------------------------------------------------------------
+# UWAGA bootc: Chrome i Brave instalują się do /opt, a w obrazie atomic
+# /opt to symlink → /var/opt (poza obrazem), więc rpm nie rozpakuje (cpio mkdir fail).
+# Zamieniamy symlink /opt na REALNY katalog w obrazie (wzorzec Bazzite/ublue) —
+# ostree przy wdrożeniu zrelokuje zawartość /opt do /var/opt. Robimy to RAZ,
+# przed instalacją obu przeglądarek.
+RUN rm -f /opt && mkdir -p /opt
+
+RUN rpm --import https://dl.google.com/linux/linux_signing_key.pub \
+    && echo "Google Chrome GPG key: OK"
+
+RUN dnf install -y \
+    google-chrome-stable \
+    && dnf clean all
+
+RUN rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc \
+    && echo "Brave Browser GPG key: OK"
+
+RUN dnf install -y \
+    brave-browser \
+    && dnf clean all
+
+# ---------------------------------------------------------------------------
+# F4.2: Narzędzia sieciowe i kryptograficzne — hping3 + hashcat
+#
+# hping3:  generator/analizator pakietów TCP/IP; Fedora repo (fedora, v0.0.20051105)
+# hashcat: GPU password cracker;               Fedora repo (fedora, v7.1.2)
+# Oba dostępne w standardowym Fedora 44 repo — bez RPM Fusion.
+#
+# Dry-run (dnf info w kontenerze bazy, zweryfikowane):
+#   hping3  v0.0.20051105  → repo: fedora  OK
+#   hashcat v7.1.2         → repo: fedora  OK
+# ---------------------------------------------------------------------------
+RUN dnf install -y \
+    # --- Diagnostyka / testowanie sieci (TCP/IP packet crafting) ---
+    hping3 \
+    # --- Password recovery / audyt haseł (GPU-accelerated) ---
+    hashcat \
+    && dnf clean all
+
+# ---------------------------------------------------------------------------
+# F4.3: dconf — aktualizacja po dodaniu nowych ustawień
+#
+# Uruchamiamy dconf update ponownie po F4, by wbudować nowe klucze dconf
+# (favorite-apps z Brave) do bazy systemowej.
+# ---------------------------------------------------------------------------
+RUN dconf update \
+    && echo "dconf update F4: OK"
+
+# ---------------------------------------------------------------------------
+# F4.4: gnome-tour — podmiana grafiki powitalnej na logo BoobsOS
+#
+# gnome-tour pokazuje własny obraz (balon) z resources.gresource, nie LOGO z
+# os-release. Podmieniamy /org/gnome/Tour/welcome.svg na logo BoobsOS:
+#   files/usr/share/boobsos/welcome.svg (SVG z osadzonym logo, dostarczony przez COPY).
+# Procedura (zweryfikowana w kontenerze): glib2-devel daje gresource +
+# glib-compile-resources → ekstrakcja wszystkich 17 zasobów → podmiana welcome.svg
+# → odtworzenie .gresource.xml (prefix="/") → rekompilacja → nadpisanie gresource.
+# Cały blok w '|| echo skipped' — gdyby cokolwiek zawiodło, build NIE pada
+# (zostaje oryginalny balon, reszta brandingu działa).
+# ---------------------------------------------------------------------------
+RUN { dnf install -y glib2-devel \
+    && GR=/usr/share/gnome-tour/resources.gresource \
+    && W="$(mktemp -d)" && cd "$W" \
+    && for r in $(gresource list "$GR"); do \
+         rel="${r#/}"; mkdir -p "$(dirname "$rel")"; \
+         gresource extract "$GR" "$r" > "$rel"; \
+       done \
+    && cp /usr/share/boobsos/welcome.svg org/gnome/Tour/welcome.svg \
+    && { echo '<?xml version="1.0" encoding="UTF-8"?>'; echo '<gresources>'; \
+         echo '  <gresource prefix="/">'; \
+         for r in $(gresource list "$GR"); do echo "    <file>${r#/}</file>"; done; \
+         echo '  </gresource>'; echo '</gresources>'; } > t.xml \
+    && glib-compile-resources t.xml --target="$GR" \
+    && cd / && rm -rf "$W" \
+    && dnf remove -y glib2-devel \
+    && dnf clean all \
+    && echo "gnome-tour: welcome.svg → logo BoobsOS OK" ; } \
+    || echo "gnome-tour rebrand skipped (build kontynuuje)"
 
 # ---------------------------------------------------------------------------
 # LINT — obowiązkowy krok dla obrazów bootc

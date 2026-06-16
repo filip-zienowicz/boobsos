@@ -32,6 +32,19 @@ button-layout='appmenu:minimize,maximize,close'
 # arc-menu NIE jest dostępne w Fedora 44 — pominięte.
 enabled-extensions=['dash-to-panel@jderose9.github.com', 'appindicatorsupport@rgcjonas.gmail.com']
 
+# Pasek zadań (Dash) — przypięte aplikacje (favorite-apps)
+#
+# Zweryfikowane .desktop ID w obrazie (silverblue-main + instalowane pakiety):
+#   brave-browser.desktop     — Brave Browser (F4.1; z brave-browser pkg)
+#   code.desktop              — VS Code (F2.14a; z vscode.repo)
+#   org.gnome.Nautilus.desktop — GNOME Files / Menedżer plików
+#   org.gnome.Ptyxis.desktop  — Terminal (Ptyxis; silverblue-main ma Ptyxis, nie Console)
+#   org.gnome.Settings.desktop — Ustawienia systemowe
+#
+# Celowo BRAK: firefox.desktop (zainstalowany ale odpięty), org.gnome.Software.desktop
+# Chrome zainstalowany (F4.1) ale NIE przypięty — tylko Brave na pasku.
+favorite-apps=['brave-browser.desktop', 'code.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Ptyxis.desktop', 'org.gnome.Settings.desktop']
+
 [org/gnome/shell/extensions/dash-to-panel]
 # Pozycja paska: BOTTOM (dół ekranu, jak Windows taskbar)
 # panelPositions: JSON-string dla multi-monitor (jeden monitor → monitor 0)

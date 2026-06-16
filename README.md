@@ -86,6 +86,12 @@ Rozszerzenia zainstalowane z pakietów Fedory 44 (rpm, nie extensions.gnome.org)
 
 Menu Start (Arc Menu) nie jest dostępne w Fedora 44 jako pakiet rpm — użytkownik może doinstalować przez GNOME Extension Manager (`flatpak install flathub com.mattjakeman.ExtensionManager`).
 
+**Pasek zadań (favorite-apps):** `brave-browser` | `code` | `org.gnome.Nautilus` | `org.gnome.Ptyxis` | `org.gnome.Settings`
+
+**Katalog Desktop:** widoczny w Nautilusie (panelu bocznym) dzięki `XDG_DESKTOP_DIR` w `/etc/skel/.config/user-dirs.dirs`. Katalog `~/Desktop` tworzony automatycznie dla nowych użytkowników.
+
+**Hostname systemu:** `boobsos` (plik `/etc/hostname` w overlay).
+
 ---
 
 ## CI/CD
@@ -109,8 +115,11 @@ do GitLab Container Registry przy push na gałąź `main`.
 | Git i hosting | git, git-lfs, gh (GitHub CLI), glab (GitLab CLI), lazygit |
 | Shell | zsh, tmux, starship (prompt), fastfetch |
 | CLI UX | neovim, fzf, ripgrep, bat, eza, fd, zoxide, jq, yq, git-delta, direnv, htop, btop, ncdu, tree |
+| Dotfiles | Neovim (LSP/treesitter/telescope — lazy.nvim, mason), oh-my-zsh (theme ys, autosuggestions, syntax-highlighting) — domyślne dla nowych użytkowników (via /etc/skel) |
 | Build/języki | gcc/make (@development-tools), Go, Python 3, mise (node/ruby/etc.) |
-| Sieć | nmap, tcpdump, mtr, wireshark-cli (tshark), httpie, wireguard-tools, iperf3, socat |
+| Sieć | nmap, tcpdump, mtr, wireshark-cli (tshark), httpie, wireguard-tools, iperf3, socat, hping3 |
+| Bezp. / audyt | hashcat (GPU password recovery), hping3, auditd, firewalld, logrotate |
+| Przeglądarki | Brave Browser (przypięty na pasku), Google Chrome (zainstalowany), Firefox (zainstalowany — odpięty z paska) |
 | Aplikacje | VS Code (rpm), Tor Browser Launcher (rpm), OnlyOffice Desktop Editors (flatpak, 1. boot), openconnect VPN |
 | Bezpieczeństwo | firewalld (strefa FedoraWorkstation), auditd, logrotate |
 | Flatpak/GUI | Flathub włączony; OnlyOffice instalowany automatycznie przy 1. boocie; dopisz Spotify/Slack w skrypcie `boobsos-install-flatpaks` |
@@ -125,6 +134,7 @@ do GitLab Container Registry przy push na gałąź `main`.
 | F1 | Szkielet repo + minimalny Containerfile | ✅ |
 | F2 | Pakiety DevOps + Flathub | ✅ |
 | F3 | Branding w systemie (Plymouth, GDM, tapeta, tradycyjny desktop) | ✅ |
-| F4 | CI + publikacja obrazu do rejestru | ⬜ |
-| F5 | Generowanie ISO, test w VM | ⬜ |
-| F6 | Dokumentacja użytkownika | ⬜ |
+| F4 | Przeglądarki (Chrome+Brave), hping3+hashcat, hostname, Desktop w Nautilusie, favorite-apps | ✅ |
+| F5 | CI + publikacja obrazu do rejestru | ⬜ |
+| F6 | Generowanie ISO, test w VM | ⬜ |
+| F7 | Dokumentacja użytkownika | ⬜ |

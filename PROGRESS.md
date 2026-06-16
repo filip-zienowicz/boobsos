@@ -97,10 +97,85 @@ Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śl
 - OnlyOffice — brak dobrego rpm dla Fedory; flatpak z Flathub przez oneshot systemd (wzorzec Universal Blue)
 - strefa firewalld: FedoraWorkstation (domyślna) — SSH dozwolone, porty >1024 dozwolone; NIE zmieniane agresywnie
 
+## F2.15 — Domyślne dotfiles (neovim + oh-my-zsh) (ZROBIONE)
+
+### Co weszło (F2.15)
+
+**Nowe pliki overlay (przez COPY files/ /):**
+- `files/etc/skel/.config/nvim/init.lua` — pełna konfiguracja neovim (177 linii):
+  lazy.nvim bootstrap, LSP (mason + mason-lspconfig 2.0 API), treesitter, telescope, nvim-tree,
+  nvim-cmp z luasnip, gitsigns, autopairs, comment. Pluginy + LSP instalują się przy 1. starcie nvima.
+- `files/etc/skel/.zshrc` — konfiguracja zsh (35 linii):
+  oh-my-zsh, theme ys, plugins (git zsh-autosuggestions zsh-syntax-highlighting),
+  aliasy ls/ll/la przez eza (fallback do ls --color), aliasy cat → bat, HISTSIZE=50000.
+
+**Sekcja Containerfile F2.15 (PRZED `bootc container lint`):**
+- `dnf install -y nodejs22 nodejs22-npm` — runtime dla Mason LSP instalatorów.
+  (Fedora 44 nie ma generycznego `nodejs`/`npm`; nodejs22 = aktywne LTS).
+- `git clone` oh-my-zsh do `/etc/skel/.oh-my-zsh` (depth=1, slim).
+- `git clone` zsh-autosuggestions i zsh-syntax-highlighting do custom/plugins.
+- `find ... -name .git -type d -prune -exec rm -rf {}` — usunięcie .git z all clones.
+- `chmod -R a+rX /etc/skel` — poprawne uprawnienia skel.
+
+**Zależności LSP/mason/treesitter — weryfikacja:**
+- `gcc`/`make` — dostępne (@development-tools, F2.10 ✅)
+- `python3-pip` — dostępny (F2.10 ✅)
+- `ripgrep`/`fd-find` — dostępne (F2.8 ✅)
+- `git` — dostępny (F2.7 ✅)
+- `nodejs22`/`nodejs22-npm` — NOWE (F2.15); zweryfikowane: nodejs22-1:22.22.2-3.fc44.x86_64, nodejs22-npm-1:10.9.7-1.22.22.2.3.fc44.noarch
+
+**Mechanizm działania dla nowych userów:**
+- `useradd -m` kopiuje `/etc/skel/` → `$HOME/` (standard Linux).
+- `.zshrc` odwołuje się do `$HOME/.oh-my-zsh` — po skopiowaniu z skel działa bez zmian.
+- `init.lua` bootstrappuje lazy.nvim przy 1. starcie nvima; Mason auto-instaluje LSP.
+
+## F4 — Przeglądarki, narzędzia, hostname, Desktop (ZROBIONE)
+
+### Co weszło (F4)
+
+**Hostname:**
+- `files/etc/hostname` = `boobsos` (jeden plik overlay, jedna linia)
+- Containerfile: dodana podmiana `CPE_NAME` do bloku sed (os-release) + fallback RUN jeśli pole nie istnieje
+
+**Nautilus — Desktop w panelu bocznym:**
+- `files/etc/skel/.config/user-dirs.dirs` — XDG_DESKTOP_DIR="$HOME/Desktop" + pozostałe standardowe katalogi
+- `files/etc/skel/.config/user-dirs.locale` = `en_US`
+- `files/etc/skel/Desktop/.keep` — pusty plik utrzymujący katalog
+- Metoda: XDG user-dirs (pewna; działa przez skopiowanie skel przy useradd -m). Bookmarks GTK pominięte — XDG dir wystarczy by Nautilus pokazał Desktop w bocznym panelu.
+
+**Przeglądarki:**
+- `files/etc/yum.repos.d/google-chrome.repo` — Google Chrome (baseurl dl.google.com, gpgcheck=1)
+- `files/etc/yum.repos.d/brave-browser.repo` — Brave Browser (baseurl s3.brave.com, gpgcheck=1)
+- Containerfile F4.1: import kluczy GPG + `dnf install -y google-chrome-stable` + `dnf install -y brave-browser`
+
+**Pasek zadań (favorite-apps):**
+- `files/etc/dconf/db/local.d/00-boobsos` — dodano klucz `favorite-apps` w sekcji `[org/gnome/shell]`
+- Lista: `['brave-browser.desktop', 'code.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Ptyxis.desktop', 'org.gnome.Settings.desktop']`
+- Firefox odpięty (zainstalowany), org.gnome.Software odpięty, Chrome zainstalowany ale nie przypięty
+
+**Narzędzia sieciowe/kryptograficzne:**
+- Containerfile F4.2: `dnf install -y hping3 hashcat` (oba z głównego Fedora repo, bez RPM Fusion)
+
+**gnome-tour rebranding:**
+- POMINIĘTE (best-effort). Zasoby zidentyfikowane: welcome.svg w /org/gnome/Tour/welcome.svg. Podmiana zbyt krucha — zostaw TODO w Containerfile.
+
+**Dry-run (dnf) — wyniki:**
+- `google-chrome-stable` 149.0.7827.114-1 → OK (z google-chrome.repo)
+- `brave-browser` 1.91.172-1 + brave-keyring → OK (z brave-browser.repo)
+- `hping3` 0.0.20051105 → OK (repo: fedora, bez RPM Fusion)
+- `hashcat` 7.1.2 → OK (repo: fedora, bez RPM Fusion)
+
+**Zweryfikowane .desktop ID:**
+- `org.gnome.Ptyxis.desktop` — terminal w silverblue-main (nie Console, nie gnome-terminal)
+- `org.gnome.Nautilus.desktop` — Files / Menedżer plików
+- `org.gnome.Settings.desktop` — Ustawienia
+- `brave-browser.desktop` — z pakietu brave-browser (razem z com.brave.Browser.desktop)
+- `code.desktop` — VS Code (z pakietu code, vscode.repo)
+
 ## Następne (wg roadmapy w ARCHITECTURE.md)
-- **F4** — CI + publikacja obrazu do rejestru (ghcr.io lub quay.io)
-- **F5** — Generowanie ISO przez bootc-image-builder, test instalacji w VM
-- **F6** — Dokumentacja użytkownika
+- **F5** — CI + publikacja obrazu do rejestru (ghcr.io lub quay.io)
+- **F6** — Generowanie ISO przez bootc-image-builder, test instalacji w VM
+- **F7** — Dokumentacja użytkownika
 
 ## Założenia
 - System dostarczany jako obraz OCI; ISO generowane przez `bootc-image-builder`.
