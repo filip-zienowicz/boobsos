@@ -1,0 +1,11 @@
+# BoobsOS — polityka logrotate dla logów dystrybucji
+# Placeholder dla logów generowanych przez skrypty/serwisy BoobsOS.
+# Dopisz własne ścieżki jeśli dodajesz serwisy zapisujące logi do /var/log/boobsos/.
+/var/log/boobsos/*.log {
+    weekly
+    rotate 7
+    compress
+    missingok
+    notifempty
+    create 0640 root root
+}

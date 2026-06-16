@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# boobsos-install-flatpaks — instalacja flatpaków przy pierwszym uruchomieniu
+#
+# Wywoływany przez boobsos-firstboot-flatpaks.service (oneshot).
+# Aby dodać kolejne flatpaki dopisz ID do tablicy FLATPAKS poniżej.
+# Przykłady: com.spotify.Client, com.slack.Slack, com.discordapp.Discord,
+#            com.mattjakeman.ExtensionManager, org.signal.Signal
+#
+# UWAGA: Flathub musi być dostępny (internet) — serwis zależy od network-online.target.
+set -euo pipefail
+
+FLATPAKS=(
+    # Pakiet biurowy (zamiennik MS Office / Google Docs)
+    org.onlyoffice.desktopeditors
+    # Dopisz kolejne flatpaki tutaj, np.:
+    # com.spotify.Client
+    # com.slack.Slack
+)
+
+STAMP_DIR="/var/lib/boobsos"
+STAMP_FILE="${STAMP_DIR}/firstboot-flatpaks.done"
+
+echo "[boobsos-install-flatpaks] Start: $(date -Iseconds)"
+echo "[boobsos-install-flatpaks] Instalacja ${#FLATPAKS[@]} flatpaków z Flathub..."
+
+for app in "${FLATPAKS[@]}"; do
+    echo "[boobsos-install-flatpaks] Instaluję: ${app}"
+    flatpak install -y --noninteractive flathub "${app}" \
+        && echo "[boobsos-install-flatpaks] OK: ${app}" \
+        || echo "[boobsos-install-flatpaks] OSTRZEŻENIE: Nie udało się zainstalować ${app} — kontynuuję"
+done
+
+mkdir -p "${STAMP_DIR}"
+touch "${STAMP_FILE}"
+echo "[boobsos-install-flatpaks] Zakończono. Stamp: ${STAMP_FILE}"

@@ -1,0 +1,17 @@
+[Unit]
+Description=BoobsOS — instalacja flatpaków przy pierwszym uruchomieniu
+Documentation=https://boobsos.example.com/docs/firstboot
+After=network-online.target flatpak-system-helper.service
+Wants=network-online.target
+# Uruchamia się tylko raz — stamp tworzy skrypt po sukcesie
+ConditionPathExists=!/var/lib/boobsos/firstboot-flatpaks.done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/boobsos-install-flatpaks
+RemainAfterExit=yes
+# Timeout zwiększony — flatpak install pobiera duże paczki
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target

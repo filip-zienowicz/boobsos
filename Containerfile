@@ -24,7 +24,7 @@ COPY files/ /
 # ---------------------------------------------------------------------------
 RUN sed -i \
         -e 's|^NAME=.*|NAME="BoobsOS"|' \
-        -e 's|^PRETTY_NAME=.*|PRETTY_NAME="BoobsOS (Fedora Linux)"|' \
+        -e 's|^PRETTY_NAME=.*|PRETTY_NAME="BoobsOS"|' \
         -e 's|^ID=.*|ID=boobsos|' \
         -e 's|^ID_LIKE=.*|ID_LIKE="fedora"|' \
         -e 's|^HOME_URL=.*|HOME_URL="https://boobsos.example.com"|' \
@@ -491,6 +491,116 @@ RUN grep -q '^ANSI_COLOR=' /usr/lib/os-release \
     || echo 'ANSI_COLOR="38;2;37;99;235"' >> /usr/lib/os-release
 RUN grep -q '^LOGO=' /usr/lib/os-release \
     || echo 'LOGO=boobsos' >> /usr/lib/os-release
+
+# ---------------------------------------------------------------------------
+# F3.5: ikona logo dystrybucji (LOGO=boobsos)
+#
+# Logo BoobsOS jako ikona motywu 'boobsos' (z files/usr/share/icons/hicolor/).
+# Dzięki temu GNOME pokazuje je tam, gdzie używa LOGO z os-release:
+# gnome-tour (ekran powitalny), Ustawienia → Informacje, ekran logowania.
+# Odświeżamy cache motywu hicolor.
+# ---------------------------------------------------------------------------
+RUN gtk4-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
+    || gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
+    || true
+
+# ---------------------------------------------------------------------------
+# F2.14: Aplikacje desktop + baseline bezpieczeństwa
+#
+# Dodane w tej sekcji:
+#   A) VS Code (rpm, Microsoft repo) — edytor kodu gotowy od razu po instalacji
+#   B) openconnect + NetworkManager-openconnect{,-gnome} — VPN (Cisco AnyConnect/GlobalProtect)
+#   C) torbrowser-launcher — launcher pobierający i weryfikujący Tor Browser przy
+#      pierwszym uruchomieniu (standardowy sposób dla Fedory; pakiet z Fedora repo)
+#   D) OnlyOffice Desktop Editors — flatpak z Flathub, instalowany przy
+#      pierwszym boocie przez usługę systemd (patrz niżej)
+#   E) firewalld — zapora sieciowa; w bazie silverblue-main JUŻ zainstalowana i
+#      włączona (preset enabled). Zostaw domyślną strefę FedoraWorkstation (pozwala
+#      na SSH i porty > 1024 — sensowny default). `systemctl enable` to idemopotent.
+#   F) auditd — audyt systemu; w bazie silverblue-main JUŻ zainstalowany i włączony.
+#      Włączamy explicite na wypadek gdyby baza zmieniła preset.
+#   G) logrotate — rotacja logów; w bazie silverblue-main JUŻ zainstalowany i włączony
+#      (timer enabled). Polityka dystrybucji: files/etc/logrotate.d/boobsos.
+#
+# UWAGA WireGuard: wireguard-tools zainstalowany w F2.6. NetworkManager ma natywne
+# wsparcie WireGuard (nm-applet + nmcli) — nie potrzeba dodatkowego pakietu.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# F2.14a: VS Code — edytor kodu (repo Microsoft)
+#
+# Repo: files/etc/yum.repos.d/vscode.repo (nakładane przez COPY files/ / wyżej).
+# Klucz GPG importujemy przed dnf install — bez tego dnf odmówi instalacji
+# ze względu na gpgcheck=1 w vscode.repo (pakiet podpisany kluczem Microsoft).
+# ---------------------------------------------------------------------------
+RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc \
+    && echo "VS Code GPG key: OK"
+
+RUN dnf install -y \
+    # VS Code — edytor kodu (Microsoft repo, vscode.repo)
+    code \
+    && dnf clean all
+
+# ---------------------------------------------------------------------------
+# F2.14b: openconnect — klient VPN (Cisco AnyConnect / GlobalProtect / Pulse)
+#
+# openconnect: klient CLI (Fedora repo, już zainstalowany w bazie silverblue)
+# NetworkManager-openconnect: integracja z NetworkManager (ikona VPN w GNOME)
+# NetworkManager-openconnect-gnome: aplet GNOME do konfiguracji VPN przez GUI
+# Uwaga: te pakiety są już w bazie silverblue-main — install jest idempotentny.
+# ---------------------------------------------------------------------------
+RUN dnf install -y \
+    openconnect \
+    NetworkManager-openconnect \
+    NetworkManager-openconnect-gnome \
+    && dnf clean all
+
+# ---------------------------------------------------------------------------
+# F2.14c: Tor Browser Launcher
+#
+# torbrowser-launcher — launcher z Fedora repo (Fedora 44: wersja 0.3.9).
+# Nie bundluje samego Tor Browser w rpm; pobiera i weryfikuje go kryptograficznie
+# przy pierwszym uruchomieniu użytkownika. To standardowa i rekomendowana metoda
+# dla Fedory (nie trzeba ufać zewnętrznym binarkom w obrazie OCI).
+# ---------------------------------------------------------------------------
+RUN dnf install -y \
+    torbrowser-launcher \
+    && dnf clean all
+
+# ---------------------------------------------------------------------------
+# F2.14d: OnlyOffice — instalacja flatpaka przy pierwszym boocie
+#
+# OnlyOffice Desktop Editors nie ma dobrego rpm dla Fedory → flatpak z Flathub.
+# NIE instalujemy w czasie buildu obrazu (wymaga sieci i Flathub remote).
+# Zamiast tego: usługa systemd oneshot uruchamia się przy pierwszym boocie,
+# gdy sieć jest dostępna, instaluje flatpaki i tworzy stamp (nie startuje ponownie).
+#
+# Pliki (nakładane przez COPY files/ / wyżej):
+#   files/etc/systemd/system/boobsos-firstboot-flatpaks.service
+#   files/usr/libexec/boobsos-install-flatpaks  (skrypt, lista flatpaków na górze)
+#
+# Aby dodać kolejne flatpaki (Spotify, Slack, ...):
+#   dopisz ID do tablicy FLATPAKS w files/usr/libexec/boobsos-install-flatpaks
+# ---------------------------------------------------------------------------
+RUN systemctl enable boobsos-firstboot-flatpaks.service
+
+# ---------------------------------------------------------------------------
+# F2.14e: Baseline bezpieczeństwa — firewalld, auditd, logrotate
+#
+# Uwaga: wszystkie trzy pakiety są w bazie silverblue-main JUŻ zainstalowane
+# i już z domyślnym presetem enabled. `systemctl enable` poniżej jest
+# idempotentny — upewnia się że zostanie włączone nawet jeśli baza to zmieni.
+#
+# firewalld: strefa domyślna FedoraWorkstation (SSH + porty >1024 dozwolone).
+#   NIE zmieniamy strefy agresywnie — sensowny default dla stacji roboczej.
+# auditd: audyt syscalli, loguje do /var/log/audit/audit.log.
+# logrotate.timer: timer systemd rotujący logi (cotygodniowy; compress; 7 cykli).
+#   Polityka BoobsOS: files/etc/logrotate.d/boobsos (nakładana przez COPY).
+# ---------------------------------------------------------------------------
+RUN systemctl enable firewalld.service \
+    && systemctl enable auditd.service \
+    && systemctl enable logrotate.timer \
+    && echo "Usługi bezpieczeństwa: firewalld auditd logrotate.timer — enabled"
 
 # ---------------------------------------------------------------------------
 # LINT — obowiązkowy krok dla obrazów bootc

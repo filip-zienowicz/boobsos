@@ -110,8 +110,10 @@ do GitLab Container Registry przy push na gałąź `main`.
 | Shell | zsh, tmux, starship (prompt), fastfetch |
 | CLI UX | neovim, fzf, ripgrep, bat, eza, fd, zoxide, jq, yq, git-delta, direnv, htop, btop, ncdu, tree |
 | Build/języki | gcc/make (@development-tools), Go, Python 3, mise (node/ruby/etc.) |
-| Sieć | nmap, tcpdump, mtr, wireshark-cli (tshark), httpie, wireguard-tools, iperf3, socat, mtr |
-| Flatpak/GUI | Flathub włączony (VSCode, Spotify, Firefox przez `flatpak install flathub …`) |
+| Sieć | nmap, tcpdump, mtr, wireshark-cli (tshark), httpie, wireguard-tools, iperf3, socat |
+| Aplikacje | VS Code (rpm), Tor Browser Launcher (rpm), OnlyOffice Desktop Editors (flatpak, 1. boot), openconnect VPN |
+| Bezpieczeństwo | firewalld (strefa FedoraWorkstation), auditd, logrotate |
+| Flatpak/GUI | Flathub włączony; OnlyOffice instalowany automatycznie przy 1. boocie; dopisz Spotify/Slack w skrypcie `boobsos-install-flatpaks` |
 
 ---
 

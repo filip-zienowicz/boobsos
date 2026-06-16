@@ -65,6 +65,38 @@ Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śl
 - **Plymouth watermark** — motyw nadpisuje watermark.png z `/usr/share/plymouth/themes/spinner/`; własne klatki animacji nie są bundlowane (używamy animacji spinnera)
 - **accent-color** — GNOME 50 (Fedora 44) wspiera klucz `accent-color` w schemacie `org.gnome.desktop.interface`; zweryfikowane przez `gsettings range`
 
+## F2.14 — Aplikacje desktop + baseline bezpieczeństwa (ZROBIONE)
+
+### Co weszło (F2.14)
+
+**Nowe repo:**
+- `files/etc/yum.repos.d/vscode.repo` — Microsoft repo dla VS Code
+
+**Nowe pliki overlay:**
+- `files/usr/libexec/boobsos-install-flatpaks` — skrypt instalujący flatpaki przy pierwszym boocie (lista FLATPAKS na górze; domyślnie: org.onlyoffice.desktopeditors)
+- `files/etc/systemd/system/boobsos-firstboot-flatpaks.service` — oneshot, After=network-online.target, ConditionPathExists=!/var/lib/boobsos/firstboot-flatpaks.done
+- `files/etc/logrotate.d/boobsos` — polityka logrotate dla /var/log/boobsos/*.log (weekly, rotate 7, compress, missingok, notifempty)
+
+**Sekcja Containerfile F2.14:**
+- Import klucza GPG Microsoft + `dnf install -y code` (VS Code z vscode.repo)
+- `dnf install -y openconnect NetworkManager-openconnect NetworkManager-openconnect-gnome`
+- `dnf install -y torbrowser-launcher` (Fedora repo, launcher pobiera Tor Browser kryptograficznie przy 1. uruchomieniu)
+- `systemctl enable boobsos-firstboot-flatpaks.service` (OnlyOffice przez flatpak przy 1. boocie)
+- `systemctl enable firewalld.service auditd.service logrotate.timer`
+
+**Walidacja dry-run (dnf --assumeno):**
+- `code` (z vscode.repo): OK — wersja 1.124.2
+- `openconnect` / `NetworkManager-openconnect` / `NetworkManager-openconnect-gnome`: OK — już w bazie silverblue-main (zainstalowane)
+- `torbrowser-launcher`: OK — wersja 0.3.9-3.fc44 (Fedora repo)
+- `firewalld` / `audit` / `logrotate`: OK — już w bazie silverblue-main, preset enabled
+- `bash -n boobsos-install-flatpaks`: OK
+
+**Uwagi architektoniczne:**
+- firewalld, auditd, logrotate — JUŻ w bazie silverblue-main i JUŻ enabled; `systemctl enable` w Containerfile idempotentne (zabezpieczenie na zmianę bazy)
+- WireGuard — wireguard-tools zainstalowany w F2.6; NetworkManager ma natywne wsparcie WireGuard (nie potrzeba dodatkowego pakietu)
+- OnlyOffice — brak dobrego rpm dla Fedory; flatpak z Flathub przez oneshot systemd (wzorzec Universal Blue)
+- strefa firewalld: FedoraWorkstation (domyślna) — SSH dozwolone, porty >1024 dozwolone; NIE zmieniane agresywnie
+
 ## Następne (wg roadmapy w ARCHITECTURE.md)
 - **F4** — CI + publikacja obrazu do rejestru (ghcr.io lub quay.io)
 - **F5** — Generowanie ISO przez bootc-image-builder, test instalacji w VM
