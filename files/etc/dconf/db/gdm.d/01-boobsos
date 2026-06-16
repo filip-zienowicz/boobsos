@@ -1,0 +1,18 @@
+# BoobsOS — ustawienia ekranu logowania GDM
+# Nakładany przez COPY files/ / i aktywowany przez 'dconf update'.
+#
+# UWAGA: GDM działa we własnym procesie z profilem 'gdm' (system-db:gdm).
+# Zakres dostępnych kluczy jest ograniczony — GDM ignoruje ustawienia desktop/background.
+# Dostępne opcje: logo, wyłączenie listy użytkowników, ciemny motyw interfejsu.
+#
+# Pełne tło GDM (obraz tapety) wymaga motywu GDM CSS/GDM3 — to NIE jest wspierane
+# przez dconf. Alternatywa to pakiet gnome-shell-extension-login-manager-settings,
+# który NIE jest w Fedora repo. Dlatego ograniczamy się do logo + ustawień bezpieczeństwa.
+
+[org/gnome/login-screen]
+# Logo BoobsOS wyświetlane na ekranie logowania GDM (małe logo nad polem hasła)
+logo='/usr/share/pixmaps/boobsos-gdm-logo.png'
+# Nie pokazuj listy użytkowników (bezpieczeństwo)
+disable-user-list=false
+# Wyłącz restart bezpośrednio z GDM (opcjonalne, odkomentuj jeśli potrzeba)
+# disable-restart-buttons=true

@@ -65,6 +65,29 @@ Po restarcie system uruchomi się jako BoobsOS. Rollback: `sudo bootc rollback`.
 
 ---
 
+## Wygląd pulpitu — tradycyjny układ (nie macowy)
+
+BoobsOS konfiguruje GNOME jako tradycyjny desktop w stylu Windows — nie domyślny układ GNOME (pływający dock + górny pasek + activities overview).
+
+**Co jest zmienione względem domyślnego GNOME:**
+
+| Element | Domyślny GNOME | BoobsOS |
+|---------|---------------|---------|
+| Pasek zadań | Pływający dock (dół) + górny pasek | **Dash to Panel** — jeden pasek na dole z listą okien |
+| Ikony zasobnika | Brak (GNOME usuwa tray) | **AppIndicator** — pełne ikony tray (Bluetooth, VPN, itp.) |
+| Przyciski okien | Tylko zamknij | **Minimalizuj + Maksymalizuj + Zamknij** |
+| Motyw | Jasny (Adwaita) | **Ciemny** (Adwaita-dark) |
+| Akcent | Brak / niebieski | **Niebieski (#2563EB)** |
+| Tapeta | Domyślna Fedory | **Gradient marki BoobsOS** |
+
+Rozszerzenia zainstalowane z pakietów Fedory 44 (rpm, nie extensions.gnome.org):
+- `gnome-shell-extension-dash-to-panel` (UUID: `dash-to-panel@jderose9.github.com`)
+- `gnome-shell-extension-appindicator` (UUID: `appindicatorsupport@rgcjonas.gmail.com`)
+
+Menu Start (Arc Menu) nie jest dostępne w Fedora 44 jako pakiet rpm — użytkownik może doinstalować przez GNOME Extension Manager (`flatpak install flathub com.mattjakeman.ExtensionManager`).
+
+---
+
 ## CI/CD
 
 Pipeline GitLab (`.gitlab-ci.yml`) buduje obraz przy każdym push i publikuje go
@@ -99,7 +122,7 @@ do GitLab Container Registry przy push na gałąź `main`.
 | F0 | Branding (logo, paleta) | ✅ |
 | F1 | Szkielet repo + minimalny Containerfile | ✅ |
 | F2 | Pakiety DevOps + Flathub | ✅ |
-| F3 | Branding w systemie (Plymouth, GDM, tapeta) | ⬜ |
+| F3 | Branding w systemie (Plymouth, GDM, tapeta, tradycyjny desktop) | ✅ |
 | F4 | CI + publikacja obrazu do rejestru | ⬜ |
 | F5 | Generowanie ISO, test w VM | ⬜ |
 | F6 | Dokumentacja użytkownika | ⬜ |

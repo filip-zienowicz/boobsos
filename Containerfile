@@ -1,8 +1,9 @@
 # BoobsOS — Containerfile (Faza F1: minimalny szkielet)
 #
-# Baza: Universal Blue base-main (Fedora bootc + GNOME + kodeki/sterowniki już rozwiązane).
-# Zamiast czystego quay.io/fedora/fedora-bootc = jedna zmiana tej linii.
-FROM ghcr.io/ublue-os/base-main:latest
+# Baza: Universal Blue silverblue-main (Fedora Atomic + GNOME + kodeki/sterowniki).
+# UWAGA: base-main jest HEADLESS (bez DE) — dla desktopu używamy silverblue-main,
+# który zawiera pełne GNOME + GDM. KDE = kinoite-main. Zmiana = ta jedna linia.
+FROM ghcr.io/ublue-os/silverblue-main:latest
 
 # ---------------------------------------------------------------------------
 # OVERLAY SYSTEMOWY
@@ -411,8 +412,85 @@ RUN systemctl enable podman.socket
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# F3: branding w systemie (Plymouth, GDM, tapeta pulpitu, motyw GTK, fastfetch)
+# F3: branding w systemie
+#
+# Pliki nakładane przez COPY files/ / (wcześniej w tym Containerfile):
+#   files/usr/share/backgrounds/boobsos/boobsos.png        — tapeta (3840x2160)
+#   files/usr/share/backgrounds/boobsos/boobsos-dark.png   — tapeta ciemna
+#   files/etc/dconf/profile/user                           — profil dconf użytkownika
+#   files/etc/dconf/db/local.d/00-boobsos                  — ustawienia GNOME system-wide
+#   files/etc/dconf/db/gdm.d/01-boobsos                    — ustawienia GDM (logo)
+#   files/usr/share/pixmaps/boobsos-gdm-logo.png           — logo dla GDM
+#   files/usr/share/plymouth/themes/boobsos/               — motyw Plymouth
+#   files/etc/fastfetch/config.jsonc                       — konfiguracja fastfetch
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# F3.1: Rozszerzenia GNOME Shell — tradycyjny desktop (taskbar na dole + tray)
+#
+# Zweryfikowane pakiety w Fedora 44 / silverblue-main:
+#   gnome-shell-extension-dash-to-panel v73  — pasek zadań na dole (zastępuje dock)
+#   gnome-shell-extension-appindicator v64   — ikony zasobnika systemowego (tray)
+#
+# UUID rozszerzeń (zweryfikowane przez ls /usr/share/gnome-shell/extensions/
+#   w kontenerze bazy po dnf install):
+#   dash-to-panel@jderose9.github.com
+#   appindicatorsupport@rgcjonas.gmail.com
+#
+# POMINIĘTE (brak w Fedora 44 repo):
+#   gnome-shell-extension-arc-menu — nie istnieje jako rpm; można doinstalować
+#   przez użytkownika z extensions.gnome.org lub Flathub (Extension Manager)
+# ---------------------------------------------------------------------------
+RUN dnf install -y \
+    # Taskbar na dole — tradycyjny układ pulpitu (nie macowy)
+    gnome-shell-extension-dash-to-panel \
+    # Ikony zasobnika (system tray) — AppIndicator/KStatusNotifierItem
+    gnome-shell-extension-appindicator \
+    && dnf clean all
+
+# ---------------------------------------------------------------------------
+# F3.2: Plymouth — motyw startowy BoobsOS
+#
+# Motyw 'boobsos' używa modułu two-step (dostępny w bazie silverblue-main).
+# ImageDir wskazuje na /usr/share/plymouth/themes/spinner (zawiera animację).
+# Nasze watermark.png (logo BoobsOS) nadpisuje watermark.png ze spinnera.
+# Tło: ciemny granat #080F1A, pasek postępu w kolorze marki (#2563EB).
+#
+# UWAGA: plymouth-set-default-theme bez flagi -R (--rebuild-initrd) —
+# rebuild initrd nie zadziała w kontenerze; initrd przebudowuje się
+# automatycznie przy pierwszym bootc upgrade/install na systemie docelowym.
+# ---------------------------------------------------------------------------
+# Skopiuj nasze watermark.png jako logo motywu (nadpisuje spinner watermark)
+RUN cp /usr/share/plymouth/themes/boobsos/watermark.png \
+       /usr/share/plymouth/themes/spinner/watermark.png
+
+# Ustaw motyw BoobsOS jako domyślny
+# Jeśli plymouth-set-default-theme zawiedzie, fallback do pliku conf
+RUN plymouth-set-default-theme boobsos \
+    || { mkdir -p /etc/plymouth \
+         && printf '[Daemon]\nTheme=boobsos\n' > /etc/plymouth/plymouthd.conf; } \
+    && echo "Plymouth theme: boobsos (OK)"
+
+# ---------------------------------------------------------------------------
+# F3.3: dconf — aktualizacja systemowej bazy kluczy
+#
+# Aktywuje pliki z etc/dconf/db/local.d/ i etc/dconf/db/gdm.d/.
+# Musi być po COPY files/ i instalacji rozszerzeń.
+# ---------------------------------------------------------------------------
+RUN dconf update \
+    && echo "dconf update: OK"
+
+# ---------------------------------------------------------------------------
+# F3.4: os-release — dodanie pól brandingowych ANSI i LOGO
+#
+# ANSI_COLOR: ANSI escape dla 'Brand Blue' #2563EB (RGB: 37,99,235)
+# LOGO: identyfikator logo dla systemd i innych narzędzi
+# Rozszerzamy istniejący sed z F1 — dodajemy brakujące pola jeśli ich nie ma.
+# ---------------------------------------------------------------------------
+RUN grep -q '^ANSI_COLOR=' /usr/lib/os-release \
+    || echo 'ANSI_COLOR="38;2;37;99;235"' >> /usr/lib/os-release
+RUN grep -q '^LOGO=' /usr/lib/os-release \
+    || echo 'LOGO=boobsos' >> /usr/lib/os-release
 
 # ---------------------------------------------------------------------------
 # LINT — obowiązkowy krok dla obrazów bootc

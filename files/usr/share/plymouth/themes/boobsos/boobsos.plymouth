@@ -1,0 +1,70 @@
+[Plymouth Theme]
+Name=BoobsOS
+Description=BoobsOS boot splash — gradient marki z logo i paskiem postępu
+ModuleName=two-step
+
+[two-step]
+Font=Cantarell 12
+TitleFont=Cantarell Light 30
+# Katalog z animacją — korzystamy z animacji z motywu spinner (nie bundlujemy
+# własnych 36 klatek; spinner jest zawsze dostępny jako część plymouth-core)
+ImageDir=/usr/share/plymouth/themes/spinner
+# Własne watermark.png (logo BoobsOS) — wyśrodkowane na ekranie
+# two-step szuka watermark.png w ImageDir; ponieważ ImageDir wskazuje na spinner,
+# tworzymy dowiązanie w Containerfile: ln -sf .../boobsos/watermark.png .../spinner/
+# (patrz sekcja F3 w Containerfile)
+HorizontalAlignment=.5
+VerticalAlignment=.5
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.5
+# Dialog (hasło szyfrowania) — dolna część ekranu
+DialogHorizontalAlignment=.5
+DialogVerticalAlignment=.7
+TitleHorizontalAlignment=.5
+TitleVerticalAlignment=.65
+Transition=none
+TransitionDuration=0.0
+# Tło — ciemny granat #080F1A (marka BoobsOS)
+BackgroundStartColor=0x080F1A
+BackgroundEndColor=0x0D1530
+# Pasek postępu — kolor marki: niebieski #2563EB, tło ciemne
+ProgressBarBackgroundColor=0x1A2540
+ProgressBarForegroundColor=0x2563EB
+MessageBelowAnimation=true
+
+[boot-up]
+UseEndAnimation=false
+
+[shutdown]
+UseEndAnimation=false
+
+[reboot]
+UseEndAnimation=false
+
+[updates]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Aktualizowanie systemu...
+SubTitle=Nie wyłączaj komputera
+
+[system-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Aktualizacja BoobsOS...
+SubTitle=Nie wyłączaj komputera
+
+[firmware-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Aktualizacja firmware...
+SubTitle=Nie wyłączaj komputera
+
+[system-reset]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Reset systemu...
+SubTitle=Nie wyłączaj komputera

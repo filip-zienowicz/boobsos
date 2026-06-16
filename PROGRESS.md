@@ -34,8 +34,41 @@ Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śl
 - Skrypt `run-vm.sh` (VNC + SSH na Tailscale 100.102.29.104). Szczegóły i pułapki: `VM-PREVIEW.md`.
 - **Ograniczenie:** sandbox agenta blokuje hostowe qemu (display/VNC → sygnał 16) — VM uruchamia się ręcznie na hoście, nie z poziomu agenta.
 
+## F3 — Branding w systemie (ZROBIONE)
+
+### Co weszło (F3)
+- **Tapeta** (`files/usr/share/backgrounds/boobsos/`):
+  - `boobsos.png` (3840x2160) — gradient diagonalny #2090C0→#2563EB→#402090 + logo wyśrodkowane z glow
+  - `boobsos-dark.png` — ciemniejszy wariant (dark mode)
+  - Generator: `branding/make-wallpaper.py` (Pillow, odtwarzalny)
+- **dconf system-wide** (`files/etc/dconf/`):
+  - `profile/user` — user-db:user + system-db:local/site/distro
+  - `db/local.d/00-boobsos` — ciemny motyw, accent=blue, tapeta, button-layout, enabled-extensions
+  - `db/gdm.d/01-boobsos` — logo GDM
+- **GDM logo** (`files/usr/share/pixmaps/boobsos-gdm-logo.png`) — logo marki na ekranie logowania
+- **Plymouth** (`files/usr/share/plymouth/themes/boobsos/`):
+  - `boobsos.plymouth` — motyw two-step, tło #080F1A, pasek #2563EB
+  - `watermark.png` — logo BoobsOS (256x256 RGBA)
+  - Generator: `branding/make-plymouth-assets.py`
+  - Motyw bazuje na animacji ze spinnera (nie bundluje własnych 36 klatek)
+- **fastfetch** (`files/etc/fastfetch/config.jsonc`) — kolory marki #2563EB/#2090C0
+- **os-release** — dodano `ANSI_COLOR="38;2;37;99;235"` i `LOGO=boobsos` (sekcja F3.4)
+- **Containerfile F3** — zastąpił placeholder; 4 sekcje: F3.1 (gnome-ext), F3.2 (plymouth), F3.3 (dconf update), F3.4 (os-release)
+
+### Rozszerzenia GNOME — zweryfikowane UUID
+- `dash-to-panel@jderose9.github.com` (v73, Fedora 44 updates)
+- `appindicatorsupport@rgcjonas.gmail.com` (v64, Fedora 44)
+
+### Ograniczenia F3 (znane)
+- **arc-menu** — NIE dostępne w Fedora 44 repo; do instalacji przez użytkownika (Extension Manager/Flathub)
+- **Tło GDM** — pełny obraz tapety na ekranie logowania NIE jest możliwy przez dconf (GDM ignoruje background przez dconf); wymaga motywu CSS GDM3 — pominięte; ustawiono tylko logo
+- **Plymouth watermark** — motyw nadpisuje watermark.png z `/usr/share/plymouth/themes/spinner/`; własne klatki animacji nie są bundlowane (używamy animacji spinnera)
+- **accent-color** — GNOME 50 (Fedora 44) wspiera klucz `accent-color` w schemacie `org.gnome.desktop.interface`; zweryfikowane przez `gsettings range`
+
 ## Następne (wg roadmapy w ARCHITECTURE.md)
-- **F3** — branding w systemie: Plymouth (splash), GDM (ekran logowania), tapeta pulpitu, fastfetch ASCII art z paletą BoobsOS. Dopiero to nada pulpitowi wygląd BoobsOS (teraz czysty GNOME z os-release=BoobsOS).
+- **F4** — CI + publikacja obrazu do rejestru (ghcr.io lub quay.io)
+- **F5** — Generowanie ISO przez bootc-image-builder, test instalacji w VM
+- **F6** — Dokumentacja użytkownika
 
 ## Założenia
 - System dostarczany jako obraz OCI; ISO generowane przez `bootc-image-builder`.

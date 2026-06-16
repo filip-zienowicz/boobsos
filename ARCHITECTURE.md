@@ -57,7 +57,7 @@ quay.io/fedora/fedora-bootc:42   ← baza Fedory (upstream)
 
 | Warstwa            | Wybór                                          |
 |--------------------|------------------------------------------------|
-| Baza               | Universal Blue `base-main` (Fedora bootc, GNOME) |
+| Baza               | Universal Blue `silverblue-main` (Fedora Atomic, GNOME) |
 | Definicja systemu  | `Containerfile`                                |
 | Build obrazu       | Podman/Buildah w CI                            |
 | Rejestr            | ghcr.io lub quay.io                            |
@@ -76,7 +76,7 @@ Dokładnie nasz przypadek użycia. Opcje startu:
 ## Decyzje (zatwierdzone)
 
 1. **Środowisko graficzne: GNOME.** Wayland, flagowiec Fedory, najmniej utrzymania, najłatwiej spójnie obrandować. KDE jako ewentualny spin w przyszłości.
-2. **Baza obrazu: Universal Blue `base-main` (GNOME).** Fedora bootc z rozwiązanymi kodekami/sterownikami/akmods, bez ich brandingu. `FROM ghcr.io/ublue-os/base-main:latest`. Zamiana na czystą `quay.io/fedora/fedora-bootc` = jedna linijka, gdyby zależność była problemem.
+2. **Baza obrazu: Universal Blue `silverblue-main` (GNOME).** Fedora Atomic z pełnym GNOME + GDM, rozwiązanymi kodekami/sterownikami/akmods, bez ich brandingu. `FROM ghcr.io/ublue-os/silverblue-main:latest`. UWAGA: `base-main` jest HEADLESS (bez DE) — dlatego dla desktopu używamy `silverblue-main`. KDE = `kinoite-main`. Zamiana = jedna linijka.
 3. **Hosting/CI: GitLab** (rejestr + GitLab CI), spójnie z `cycrus-ksef`.
 
 ## Roadmap (fazy)

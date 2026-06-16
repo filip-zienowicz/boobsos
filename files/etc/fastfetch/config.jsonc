@@ -1,0 +1,89 @@
+// BoobsOS — konfiguracja fastfetch
+// Kolory marki: Brand Blue #2563EB (ANSI: 38;2;37;99;235)
+// Gradient: Cyan #2090C0 → Blue #2563EB → Violet #402090
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        // Używamy wbudowanego logo Fedory jako ASCII bazy, nadpisując kolory marki.
+        // Alternatywnie można użyć "type": "none" żeby pokazać tylko moduły.
+        "type": "builtin",
+        "source": "Fedora",
+        // Kolory w ASCII art — przepaleta na kolory marki BoobsOS
+        "color": {
+            "1": "38;2;32;144;192",   // Cyan #2090C0
+            "2": "38;2;37;99;235"     // Brand Blue #2563EB
+        }
+    },
+    "display": {
+        // Kolor wartości (prawa strona)
+        "color": {
+            "keys": "38;2;37;99;235",       // Brand Blue dla kluczy
+            "title": "38;2;32;144;192",     // Cyan dla tytułu user@host
+            "output": "38;2;255;255;255"    // biały dla wartości
+        },
+        "separator": "  "
+    },
+    "modules": [
+        "title",
+        "separator",
+        {
+            "type": "os",
+            "key": "OS"
+        },
+        {
+            "type": "kernel",
+            "key": "Kernel"
+        },
+        {
+            "type": "uptime",
+            "key": "Uptime"
+        },
+        {
+            "type": "packages",
+            "key": "Packages"
+        },
+        {
+            "type": "shell",
+            "key": "Shell"
+        },
+        {
+            "type": "display",
+            "key": "Resolution"
+        },
+        {
+            "type": "de",
+            "key": "DE"
+        },
+        {
+            "type": "wm",
+            "key": "WM"
+        },
+        {
+            "type": "terminal",
+            "key": "Terminal"
+        },
+        {
+            "type": "cpu",
+            "key": "CPU"
+        },
+        {
+            "type": "gpu",
+            "key": "GPU"
+        },
+        {
+            "type": "memory",
+            "key": "Memory"
+        },
+        {
+            "type": "disk",
+            "key": "Disk"
+        },
+        "separator",
+        {
+            // Paleta kolorów 8 bloków na dole (tradycyjne neofetch)
+            "type": "colors",
+            "paddingLeft": 0,
+            "symbol": "block"
+        }
+    ]
+}

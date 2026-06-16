@@ -1,0 +1,47 @@
+# BoobsOS — systemowe domyślne ustawienia GNOME (dconf keyfile)
+# Nakładane przez COPY files/ / i aktywowane przez 'dconf update'.
+# Użytkownik może nadpisać te wartości we własnym profilu (user-db:user).
+
+[org/gnome/desktop/interface]
+# Ciemny motyw — domyślny dla BoobsOS
+color-scheme='prefer-dark'
+gtk-theme='Adwaita-dark'
+# Akcent niebieski — wspierany od GNOME 47+ (Fedora 41+); GNOME 50 OK
+accent-color='blue'
+
+[org/gnome/desktop/background]
+# Tapeta pulpitu — gradient marki z logo BoobsOS
+picture-uri='file:///usr/share/backgrounds/boobsos/boobsos.png'
+picture-uri-dark='file:///usr/share/backgrounds/boobsos/boobsos-dark.png'
+picture-options='zoom'
+
+[org/gnome/desktop/screensaver]
+# Wygaszacz ekranu — ta sama tapeta co pulpit
+picture-uri='file:///usr/share/backgrounds/boobsos/boobsos.png'
+picture-options='zoom'
+
+[org/gnome/desktop/wm/preferences]
+# Tradycyjny układ przycisków: minimize, maximize, close (jak Windows)
+button-layout='appmenu:minimize,maximize,close'
+
+[org/gnome/shell]
+# Włączone rozszerzenia GNOME Shell:
+#   dash-to-panel@jderose9.github.com        — pasek zadań na dole (tradycyjny desktop)
+#   appindicatorsupport@rgcjonas.gmail.com   — ikony zasobnika systemowego (tray)
+# UUID zweryfikowane z /usr/share/gnome-shell/extensions/ po dnf install w obrazie bazy.
+# arc-menu NIE jest dostępne w Fedora 44 — pominięte.
+enabled-extensions=['dash-to-panel@jderose9.github.com', 'appindicatorsupport@rgcjonas.gmail.com']
+
+[org/gnome/shell/extensions/dash-to-panel]
+# Pozycja paska: BOTTOM (dół ekranu, jak Windows taskbar)
+# panelPositions: JSON-string dla multi-monitor (jeden monitor → monitor 0)
+panel-positions='{"0":"BOTTOM"}'
+# Rozmiar ikon i wysokość paska
+panel-sizes='{"0":48}'
+# Pokaż listę okien (nie tylko dock z ulubionymi)
+show-window-previews=true
+# Zachowuj pełne etykiety i numerację okien
+show-favorites=true
+show-running-apps=true
+# Zegar po prawej stronie paska (jak tradycyjny pulpit)
+show-clock-in-status-panel=true
