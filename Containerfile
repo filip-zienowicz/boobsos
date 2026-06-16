@@ -71,14 +71,9 @@ RUN grep -q '^VARIANT_ID=' /usr/lib/os-release \
 #   - age:     encryption → dostępny w Fedora repo
 #   - opentofu: IaC (fork terraform) → COPR: opentofu/opentofu  # UWAGA: zweryfikować
 # ---------------------------------------------------------------------------
+# lazygit — TUI dla git; brak w Fedora repo → COPR atim/lazygit (zweryfikowane).
+# mise i opentofu NIE wymagają COPR — są w Fedora 44 / przez własne repo (mise.repo).
 RUN dnf copr enable -y atim/lazygit \
-    # mise — menedżer wersji toolchainów (node, python, ruby, etc.)
-    # UWAGA: COPR jdx/mise — zweryfikuj czy istnieje; alternatywa: binarka z GitHub
-    && dnf copr enable -y jdx/mise \
-    # opentofu — fork terraform; oficjalny rpm z ich repo lub COPR
-    # UWAGA: opentofu.org dostarcza rpm repo; tutaj przez COPR jako fallback
-    # Rozważ dodanie pliku files/etc/yum.repos.d/opentofu.repo zamiast COPR
-    && dnf copr enable -y opentofu/opentofu \
     && dnf clean all
 
 # ---------------------------------------------------------------------------
@@ -110,43 +105,54 @@ RUN dnf install -y \
 # stern: brak w Fedora repo → binarka z GitHub releases (TODO poniżej)
 # kind: brak w Fedora repo → binarka z GitHub releases (TODO poniżej)
 # ---------------------------------------------------------------------------
+# Zweryfikowane w Fedora 44: helm (4.1.1), k9s (0.51), kustomize (5.8), kind (0.31).
+# kubectl: z kubernetes.repo (v1.31). kubectx/kubens: brak w rpm → skrypty (F2.4).
 RUN dnf install -y \
     # --- kubectl (kubernetes.repo v1.31) ---
     kubectl \
-    # --- Helm — zarządzanie aplikacjami K8s ---
+    # --- Helm — zarządzanie aplikacjami K8s (Fedora repo) ---
     helm \
-    # --- k9s — TUI dla Kubernetes ---
-    # UWAGA: zweryfikować źródło — Fedora repo lub COPR luminoso/k9s
+    # --- k9s — TUI dla Kubernetes (Fedora repo) ---
     k9s \
-    # --- kubectx + kubens — szybkie przełączanie kontekstów K8s ---
-    # UWAGA: w Fedora repo może być jako 'kubectx' (zawiera kubens)
-    kubectx \
-    # --- kustomize — nakładki YAML dla K8s ---
-    # UWAGA: zweryfikować nazwę — może być 'kubernetes-client' lub 'kustomize'
+    # --- kustomize — nakładki YAML dla K8s (Fedora repo) ---
     kustomize \
     && dnf clean all
+# UWAGA: kind NIE jest instalowany z Fedora rpm — pakiet 'kind' wymaga
+# (docker-cli OR podman-docker), które kolidują z prawdziwym docker-ce.
+# Dlatego kind instalujemy jako binarkę w F2.4.
 
 # ---------------------------------------------------------------------------
-# F2.4: Binarki K8s niedostępne w rpm (stern, kind)
+# F2.4: Narzędzia K8s niedostępne / niemożliwe w rpm (stern, kind, kubectx, kubens)
 #
-# stern — tail logów z wielu podów K8s. Brak rpm w Fedora/COPR.
-# kind  — Kubernetes in Docker (lokalne klastry). Brak rpm.
-# Instalujemy do /usr/local/bin (trwałe w obrazie bootc).
+# stern — tail logów z wielu podów K8s. Brak rpm → binarka z GitHub releases.
+# kind  — Kubernetes in Docker. Pakiet rpm wymaga (docker-cli OR podman-docker),
+#         co koliduje z docker-ce → instalujemy binarkę z GitHub releases.
+# kubectx/kubens — przełączanie kontekstów/namespace. Brak rpm → czyste skrypty
+#                  bash (niezależne od architektury) wprost z repo ahmetb/kubectx.
+# Instalujemy do /usr/bin — NIE /usr/local/bin! W bootc /usr/local to symlink
+# do /var/usrlocal (poza obrazem), więc pliki tam nie przetrwają. /usr/bin jest
+# częścią niezmiennego obrazu.
 # UWAGA: wersje hardcode — aktualizuj przy nowym buildzie.
 # ---------------------------------------------------------------------------
 RUN STERN_VERSION="1.30.0" \
-    && KIND_VERSION="0.24.0" \
+    && KIND_VERSION="0.31.0" \
+    && KUBECTX_VERSION="0.9.5" \
     && ARCH="$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')" \
-    # stern
+    # stern (binarka)
     && curl -fsSL "https://github.com/stern/stern/releases/download/v${STERN_VERSION}/stern_${STERN_VERSION}_linux_${ARCH}.tar.gz" \
-       | tar -xzf - -C /usr/local/bin stern \
-    && chmod +x /usr/local/bin/stern \
-    # kind
+       | tar -xzf - -C /usr/bin stern \
+    && chmod +x /usr/bin/stern \
+    # kind (binarka)
     && curl -fsSL "https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-linux-${ARCH}" \
-       -o /usr/local/bin/kind \
-    && chmod +x /usr/local/bin/kind \
-    && echo "stern $(stern --version 2>/dev/null || echo 'installed')" \
-    && echo "kind $(kind version 2>/dev/null || echo 'installed')"
+       -o /usr/bin/kind \
+    && chmod +x /usr/bin/kind \
+    # kubectx + kubens (skrypty bash)
+    && curl -fsSL "https://raw.githubusercontent.com/ahmetb/kubectx/v${KUBECTX_VERSION}/kubectx" \
+       -o /usr/bin/kubectx \
+    && curl -fsSL "https://raw.githubusercontent.com/ahmetb/kubectx/v${KUBECTX_VERSION}/kubens" \
+       -o /usr/bin/kubens \
+    && chmod +x /usr/bin/kubectx /usr/bin/kubens \
+    && echo "stern $(stern --version 2>/dev/null || echo 'installed'), kubectx/kubens installed"
 
 # ---------------------------------------------------------------------------
 # F2.5: Instalacja pakietów — IaC i automatyzacja
@@ -158,8 +164,7 @@ RUN STERN_VERSION="1.30.0" \
 RUN dnf install -y \
     # --- Terraform (HashiCorp repo) ---
     terraform \
-    # --- OpenTofu — open-source fork Terraform ---
-    # UWAGA: opentofu/opentofu COPR — zweryfikować czy pakiet nazywa się 'opentofu'
+    # --- OpenTofu — open-source fork Terraform (Fedora repo, opentofu 1.11) ---
     opentofu \
     # --- Ansible — automatyzacja konfiguracji ---
     # ansible-core = minimalna instalacja; 'ansible' = pełna kolekcja (duża)
@@ -232,14 +237,14 @@ RUN dnf install -y \
 # zoxide: smart cd; Fedora repo  # UWAGA: zweryfikować
 # git-delta: diff pager; Fedora repo jako 'git-delta'  # UWAGA: może być 'delta'
 # lazygit: TUI dla git; COPR atim/lazygit (włączony wyżej)
-# starship: prompt; Fedora repo  # UWAGA: zweryfikować dostępność
-# just: command runner; Fedora repo od F38
-# fastfetch: system info; Fedora repo od F39  # UWAGA: zweryfikować
+# starship: prompt; BRAK w Fedora repo → skrypt instalacyjny (F2.8b poniżej)
+# just: command runner; Fedora repo (1.51) — zweryfikowane
+# fastfetch: system info; Fedora repo (2.63) — zweryfikowane
 # direnv: env per katalog; Fedora repo
 # btop: TUI monitor zasobów; Fedora repo
 # ncdu: analiza dysku; Fedora repo
-# yq: YAML processor; Fedora repo  # UWAGA: zweryfikować — może być pip/snap
-# mise: toolchain manager; COPR jdx/mise (włączony wyżej)  # UWAGA: zweryfikować
+# yq: YAML processor; Fedora repo (4.47 = mikefarah/Go) — zweryfikowane
+# mise: toolchain manager; własne repo mise.repo (mise.jdx.dev) — zweryfikowane
 # ---------------------------------------------------------------------------
 RUN dnf install -y \
     # --- Przegląd plików i nawigacja ---
@@ -267,13 +272,9 @@ RUN dnf install -y \
     # Dwie różne implementacje: python-yq (wrapper jq) i mikefarah/yq (Go).
     # Rekomendacja: go-yq lub binarka z GitHub; tutaj próbujemy Fedora repo
     yq \
-    # --- Prompt i terminal ---
-    # UWAGA: starship — zweryfikować czy jest w Fedora repo jako 'starship'
-    starship \
     # --- Automatyzacja i build ---
     just \
-    # --- Toolchain manager ---
-    # UWAGA: mise — zweryfikować COPR jdx/mise; alternatywa: binarka curl|bash
+    # --- Toolchain manager (mise — z własnego repo files/etc/yum.repos.d/mise.repo) ---
     mise \
     # --- System info ---
     # UWAGA: fastfetch — Fedora repo od F39+; zweryfikować
@@ -281,6 +282,15 @@ RUN dnf install -y \
     # --- Edytor ---
     neovim \
     && dnf clean all
+
+# ---------------------------------------------------------------------------
+# F2.8b: starship — prompt (brak w Fedora repo)
+# Oficjalny skrypt instalacyjny; sam wykrywa architekturę i pobiera binarkę.
+# Instaluje do /usr/bin (trwałe w obrazie bootc).
+# ---------------------------------------------------------------------------
+RUN curl -fsSL https://starship.rs/install.sh \
+    | sh -s -- --yes --bin-dir /usr/bin \
+    && starship --version
 
 # ---------------------------------------------------------------------------
 # F2.9: Instalacja pakietów — Sekrety i kryptografia
@@ -294,25 +304,30 @@ RUN dnf install -y \
 RUN dnf install -y \
     # --- HashiCorp Vault ---
     vault \
-    # --- Kryptografia i sekrety ---
-    # UWAGA: age — Fedora repo od F37+; zweryfikuj 'dnf info age'
+    # --- Kryptografia i sekrety (zweryfikowane w Fedora 44) ---
     age \
-    # age-plugin-yubikey: szyfrowanie age z kluczem sprzętowym YubiKey (PIV)
-    # UWAGA: w Fedora repo od F39 jako 'age-plugin-yubikey'; jeśli brak →
-    #        COPR lub `cargo install age-plugin-yubikey` (wymaga pcsc-lite-devel)
-    age-plugin-yubikey \
     gnupg2 \
     pass \
+    # pcsc-lite: runtime dla age-plugin-yubikey (komunikacja z YubiKey przez PIV)
+    pcsc-lite \
     && dnf clean all
 
-# sops — Mozilla SOPS; brak rpm w Fedora repo
-# UWAGA: wersja hardcode — aktualizuj przy nowym buildzie
+# sops — Mozilla SOPS; brak rpm w Fedora repo → binarka z GitHub releases
+# age-plugin-yubikey — brak w Fedora 44 → binarka z GitHub releases (str4d)
+# UWAGA: wersje hardcode — aktualizuj przy nowym buildzie
 RUN SOPS_VERSION="3.9.1" \
+    && AGEYK_VERSION="0.5.0" \
     && ARCH="$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')" \
+    && RAWARCH="$(uname -m)" \
+    # sops
     && curl -fsSL "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.${ARCH}" \
-       -o /usr/local/bin/sops \
-    && chmod +x /usr/local/bin/sops \
-    && echo "sops installed: $(sops --version 2>/dev/null || echo ok)"
+       -o /usr/bin/sops \
+    && chmod +x /usr/bin/sops \
+    # age-plugin-yubikey (tarball zawiera katalog age-plugin-yubikey/age-plugin-yubikey)
+    && curl -fsSL "https://github.com/str4d/age-plugin-yubikey/releases/download/v${AGEYK_VERSION}/age-plugin-yubikey-v${AGEYK_VERSION}-${RAWARCH}-linux.tar.gz" \
+       | tar -xzf - -C /usr/bin --strip-components=1 age-plugin-yubikey/age-plugin-yubikey \
+    && chmod +x /usr/bin/age-plugin-yubikey \
+    && echo "sops $(sops --version 2>/dev/null | head -1 || echo ok), age-plugin-yubikey installed"
 
 # ---------------------------------------------------------------------------
 # F2.10: Instalacja pakietów — Build i języki
@@ -329,6 +344,8 @@ RUN dnf install -y \
     # --- Python (dev headers, pip) — dla ansible i innych narzędzi ---
     python3-pip \
     python3-devel \
+    # --- unzip — wymagany przez instalator AWS CLI v2 (F2.11) ---
+    unzip \
     && dnf clean all
 
 # ---------------------------------------------------------------------------
@@ -349,12 +366,12 @@ RUN dnf install -y \
 
 # AWS CLI v2 — brak rpm; instalacja przez oficjalny bundle AWS
 # Źródło: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-# UWAGA: instaluje do /usr/local/aws-cli, symlinki do /usr/local/bin
-# TODO F2: rozważ COPR lub własny wrapper rpm zamiast curl|unzip
+# UWAGA bootc: /usr/local i /opt to symlinki do /var (poza obrazem) — instalujemy
+#        do /usr/libexec/aws-cli, a symlinki binarek do /usr/bin.
 RUN ARCH="$(uname -m)" \
     && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o /tmp/awscliv2.zip \
     && unzip -q /tmp/awscliv2.zip -d /tmp/awscli \
-    && /tmp/awscli/aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli \
+    && /tmp/awscli/aws/install --bin-dir /usr/bin --install-dir /usr/libexec/aws-cli \
     && rm -rf /tmp/awscliv2.zip /tmp/awscli \
     && aws --version
 
@@ -384,13 +401,14 @@ RUN systemctl enable podman.socket
 #   flatpak install flathub org.mozilla.firefox      # Firefox
 #   flatpak install flathub com.slack.Slack          # Slack
 #
-# Metoda: flatpak remote-add z oficjalnego URL Flathub (pobiera klucz GPG).
-# Wymaga sieci w czasie buildu.
-# UWAGA: '--if-not-exists' = bezpieczne przy rebuild (nie fail jeśli już jest).
+# Metoda DEKLARATYWNA (bootc-native): plik
+#   files/etc/flatpak/remotes.d/flathub.flatpakrepo
+# (prawdziwy flatpakrepo z wbudowanym kluczem GPG) jest nakładany przez COPY.
+# flatpak automatycznie rejestruje remote z /etc/flatpak/remotes.d/*.flatpakrepo —
+# bez potrzeby 'flatpak remote-add' i bez sieci w czasie buildu.
+# UWAGA: NIE używać tu komentarza-placeholdera — flatpak parsuje każdy plik
+#        w remotes.d i nieprawidłowy plik wywala operacje flatpak.
 # ---------------------------------------------------------------------------
-RUN flatpak remote-add --system --if-not-exists flathub \
-    https://flathub.org/repo/flathub.flatpakrepo \
-    && flatpak remotes --system
 
 # ---------------------------------------------------------------------------
 # F3: branding w systemie (Plymouth, GDM, tapeta pulpitu, motyw GTK, fastfetch)

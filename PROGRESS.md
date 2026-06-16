@@ -16,7 +16,13 @@ Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śl
   - Flathub: `flatpak remote-add --system` (NIE instalujemy flatpaków w obrazie).
 
 ## W toku
-_(brak — F2 ukończone; F3 następne)_
+- **Pierwszy build lokalny (docker) — hardening F2.** Build zweryfikowany realnie na Fedorze 44 (baza UBlue base-main). Ustalenia i naprawy:
+  - Większość narzędzi JEST w Fedora 44 (k9s, helm, opentofu, kustomize, eza, fd-find, bat, git-delta, zoxide, fastfetch, yq=mikefarah, just, glab, gh, age…). Zbędne COPR-y usunięte — został tylko `atim/lazygit`.
+  - `mise` → własne repo `files/etc/yum.repos.d/mise.repo` (mise.jdx.dev), nie COPR.
+  - Konflikt **docker-ce ↔ podman-docker/docker-cli**: dodany globalny `excludepkgs` w `files/etc/dnf/dnf.conf`. Pakiet rpm `kind` wymaga `(docker-cli OR podman-docker)` → kind instalowany jako **binarka** (nie rpm).
+  - **Gotcha bootc:** `/usr/local` i `/opt` to symlinki do `/var` (poza obrazem). Wszystkie binarki (stern, kind, kubectx, kubens, sops, age-plugin-yubikey, starship, AWS CLI) → `/usr/bin` / `/usr/libexec`, NIE `/usr/local/bin`.
+  - `starship` i `age-plugin-yubikey` → binarki (brak w Fedora 44); `pcsc-lite` dodany dla YubiKey; `unzip` dla bundla AWS.
+  - Metoda walidacji: dry-run `dnf --assumeno` + HEAD-check URL-i w kontenerze bazy zamiast wielu pełnych rebuildów.
 
 ## Decyzje (zatwierdzone)
 1. Środowisko graficzne: **GNOME**.
