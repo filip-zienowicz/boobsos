@@ -72,13 +72,33 @@ do GitLab Container Registry przy push na gałąź `main`.
 
 ---
 
+## Co jest z pudełka
+
+Środowisko gotowe do pracy od razu po instalacji — bez konfiguracji po instalacji:
+
+| Kategoria | Narzędzia |
+|-----------|-----------|
+| Kontenery | Docker CE, Podman, Buildah, Skopeo, Distrobox, docker-compose |
+| Kubernetes | kubectl, helm, k9s, kubectx/kubens, kustomize, stern, kind |
+| IaC | Terraform, OpenTofu, Ansible |
+| Chmura | AWS CLI v2, azure-cli (az), google-cloud-cli (gcloud) |
+| Sekrety | Vault (HashiCorp), SOPS, age (+ YubiKey plugin), GnuPG, pass |
+| Git i hosting | git, git-lfs, gh (GitHub CLI), glab (GitLab CLI), lazygit |
+| Shell | zsh, tmux, starship (prompt), fastfetch |
+| CLI UX | neovim, fzf, ripgrep, bat, eza, fd, zoxide, jq, yq, git-delta, direnv, htop, btop, ncdu, tree |
+| Build/języki | gcc/make (@development-tools), Go, Python 3, mise (node/ruby/etc.) |
+| Sieć | nmap, tcpdump, mtr, wireshark-cli (tshark), httpie, wireguard-tools, iperf3, socat, mtr |
+| Flatpak/GUI | Flathub włączony (VSCode, Spotify, Firefox przez `flatpak install flathub …`) |
+
+---
+
 ## Roadmap
 
 | Faza | Opis | Status |
 |------|------|--------|
 | F0 | Branding (logo, paleta) | ✅ |
 | F1 | Szkielet repo + minimalny Containerfile | ✅ |
-| F2 | Pakiety DevOps + domyślny pulpit | ⬜ |
+| F2 | Pakiety DevOps + Flathub | ✅ |
 | F3 | Branding w systemie (Plymouth, GDM, tapeta) | ⬜ |
 | F4 | CI + publikacja obrazu do rejestru | ⬜ |
 | F5 | Generowanie ISO, test w VM | ⬜ |

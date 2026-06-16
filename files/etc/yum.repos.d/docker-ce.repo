@@ -1,0 +1,11 @@
+# Docker CE — oficjalne repo Docker Inc. dla Fedory.
+# Źródło: https://docs.docker.com/engine/install/fedora/
+# Zawiera: docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin.
+# UWAGA: Docker CE i Podman mogą kolidować w zakresie containerd — w razie konfliktu
+# rozważ użycie tylko containerd.io z Docker CE i osobnego podman z Fedora repo.
+[docker-ce-stable]
+name=Docker CE Stable - $basearch
+baseurl=https://download.docker.com/linux/fedora/$releasever/$basearch/stable
+enabled=1
+gpgcheck=1
+gpgkey=https://download.docker.com/linux/fedora/gpg

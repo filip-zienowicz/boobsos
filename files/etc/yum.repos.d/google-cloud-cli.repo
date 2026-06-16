@@ -1,0 +1,13 @@
+# Google Cloud CLI — oficjalne repo Google dla google-cloud-cli.
+# Źródło: https://cloud.google.com/sdk/docs/install#rpm
+# Zawiera: google-cloud-cli (gcloud, gsutil, bq).
+# UWAGA: Repo Google używa yum-cron podejścia; baseurl jest stabilny dla rpm.
+[google-cloud-cli]
+name=Google Cloud CLI
+baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+# UWAGA: baseurl powyżej jest dla x86_64/el9 — może nie działać na aarch64.
+# Dla aarch64: sprawdź czy Google ma wariant arm64 w tym repo.
+# Alternatywa: instalacja przez skrypt instalacyjny Google (patrz TODO w Containerfile).

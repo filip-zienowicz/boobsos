@@ -1,0 +1,9 @@
+# Azure CLI — oficjalne repo Microsoft dla azure-cli.
+# Źródło: https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=dnf
+# Wspiera Fedorę (rpm). Podpisane kluczem Microsoft.
+[azure-cli]
+name=Azure CLI
+baseurl=https://packages.microsoft.com/yumrepos/azure-cli
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc

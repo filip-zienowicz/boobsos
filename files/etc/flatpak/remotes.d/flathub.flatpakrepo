@@ -1,0 +1,8 @@
+# Flathub — główne repo Flatpak dla aplikacji GUI.
+#
+# UWAGA: Ten plik NIE jest używany bezpośrednio przez overlay COPY w tym projekcie.
+# Zamiast tego używamy RUN flatpak remote-add w Containerfile (patrz sekcja F2),
+# bo wymaga to pobrania klucza GPG z sieci w czasie buildu.
+# Ten plik zostawiamy jako dokumentację intencji.
+#
+# Właściwa metoda bootstrap: patrz Containerfile sekcja F2 → "Włączenie Flathub".
