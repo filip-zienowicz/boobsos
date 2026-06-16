@@ -1,0 +1,7 @@
+[[customizations.user]]
+name = "boobs"
+password = "boobs"
+groups = ["wheel"]
+
+[customizations.kernel]
+append = "console=ttyS0"

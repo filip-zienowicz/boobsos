@@ -1,0 +1,5 @@
+FROM boobsos:dev
+# Konto demo do VM (NIE część właściwej dystrybucji — tylko do podglądu)
+RUN useradd -m -G wheel -s /usr/bin/zsh boobs && echo 'boobs:boobs' | chpasswd
+# Autologin GNOME, by VM od razu wszedł na pulpit
+RUN mkdir -p /etc/gdm && printf '[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=boobs\n' > /etc/gdm/custom.conf

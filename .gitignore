@@ -13,6 +13,12 @@ output/
 .buildah-cache/
 containers-storage/
 
+# Artefakty VM / podglądu (lokalne, nie do repo)
+bib-output/
+*.fd
+vm-serial.log
+*.err
+
 # Pliki tymczasowe systemu
 .DS_Store
 Thumbs.db

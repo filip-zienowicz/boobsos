@@ -29,8 +29,13 @@ Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śl
 2. Baza obrazu: **Universal Blue `base-main`** (`ghcr.io/ublue-os/base-main`).
 3. Hosting/CI: **GitLab** (rejestr + CI).
 
+## Podgląd VM (qcow2 + QEMU)
+- ✅ Bootowalny **qcow2** wygenerowany przez bib (`bib-output/qcow2/disk.qcow2`), konto demo `boobs`/`boobs`, autologin GNOME. Bootuje UEFI → GRUB „BoobsOS".
+- Skrypt `run-vm.sh` (VNC + SSH na Tailscale 100.102.29.104). Szczegóły i pułapki: `VM-PREVIEW.md`.
+- **Ograniczenie:** sandbox agenta blokuje hostowe qemu (display/VNC → sygnał 16) — VM uruchamia się ręcznie na hoście, nie z poziomu agenta.
+
 ## Następne (wg roadmapy w ARCHITECTURE.md)
-- **F3** — branding w systemie: Plymouth (splash), GDM (ekran logowania), tapeta pulpitu, fastfetch ASCII art z paletą BoobsOS.
+- **F3** — branding w systemie: Plymouth (splash), GDM (ekran logowania), tapeta pulpitu, fastfetch ASCII art z paletą BoobsOS. Dopiero to nada pulpitowi wygląd BoobsOS (teraz czysty GNOME z os-release=BoobsOS).
 
 ## Założenia
 - System dostarczany jako obraz OCI; ISO generowane przez `bootc-image-builder`.
