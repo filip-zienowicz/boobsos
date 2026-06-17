@@ -10,6 +10,7 @@
 
 stages:
   - build
+  - test
   - iso
 
 variables:
@@ -51,6 +52,34 @@ build-image:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
     - if: '$CI_PIPELINE_SOURCE == "web"'
+
+# ---------------------------------------------------------------------------
+# test — walidacja zbudowanego obrazu (przed push do rejestru)
+# ---------------------------------------------------------------------------
+test-image:
+  stage: test
+  image: quay.io/buildah/stable:latest
+  before_script:
+    - *trust-ca
+    # Upewnij się, że podman jest dostępny (obraz buildah/stable ma go).
+    - podman --version || (dnf install -y podman && podman --version)
+  script:
+    - echo "==> Sprawdzam obraz ${IMAGE_SHA}"
+    # Obraz jest lokalnie w storage buildah/podman po build-image.
+    # Pobieramy go z rejestru (na main był push), a na gałęziach — z lokalnego storage via buildah push do daemon.
+    - |
+      if ! podman image exists "${IMAGE_SHA}" 2>/dev/null; then
+        echo "Obraz nie w lokalnym podman storage — próbuję buildah push do podman-storage"
+        buildah login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+        buildah push "${IMAGE_SHA}" "containers-storage:${IMAGE_SHA}" 2>/dev/null || \
+          podman pull "${IMAGE_SHA}"
+      fi
+    - bash tests/test-image.sh "${IMAGE_SHA}"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+  needs:
+    - build-image
 
 # ---------------------------------------------------------------------------
 # iso — instalator (Anaconda) z opublikowanego obrazu

@@ -80,6 +80,9 @@ jobs:
             -t "${{ matrix.image_name }}:${GITHUB_SHA::7}" \
             .
 
+      - name: Test obrazu — wariant ${{ matrix.variant }}
+        run: bash tests/test-image.sh "${{ matrix.image_name }}:${GITHUB_SHA::7}"
+
       - name: Push do rejestru (${{ matrix.variant }})
         run: |
           # ghcr bywa flaky przy dużych warstwach (HTTP 500) — retry z backoffem.

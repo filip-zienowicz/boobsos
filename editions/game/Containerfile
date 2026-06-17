@@ -33,23 +33,15 @@ ARG BASE_IMAGE=ghcr.io/ublue-os/silverblue-main
 FROM ${BASE_IMAGE}:latest
 
 # ---------------------------------------------------------------------------
-# OVERLAY SYSTEMOWY
+# EARLY COPY — wyłącznie repozytoria + dnf.conf + CA
 #
-# Nakładamy pliki z katalogu głównego repo (files/).
-# Zawiera: tapetę, dconf, plymouth, ikony, Flathub remote, firstboot service,
-#          repozytoria third-party (brave-browser, google-chrome, docker-ce, itd.).
-# Repozytoria DevOps (docker-ce, kubernetes, hashicorp, azure, gcloud, vscode)
-# są nieszkodliwe jako pliki .repo — nic z nich nie instalujemy.
+# Tylko to, czego potrzebuje dnf poniżej (brave-browser.repo z files/).
+# Zmiana w files/usr/, files/etc/dconf/, files/etc/skel/ itd.
+# NIE unieważnia warstw dnf.
 # ---------------------------------------------------------------------------
-COPY files/ /
-
-# ---------------------------------------------------------------------------
-# NADPISANIE dconf — favorite-apps gamingowy
-#
-# Pliki z editions/game/files/ nakładamy PO files/, żeby nadpisać
-# 00-boobsos (favorite-apps) wersją gamingową.
-# ---------------------------------------------------------------------------
-COPY editions/game/files/ /
+COPY files/etc/yum.repos.d/ /etc/yum.repos.d/
+COPY files/etc/dnf/ /etc/dnf/
+COPY files/etc/pki/ca-trust/source/anchors/ /etc/pki/ca-trust/source/anchors/
 
 # Aktywuj zaufane CA (registry.gitlab.cycr.us + repo.cycx.io) z anchora w files/
 RUN update-ca-trust 2>/dev/null || true
@@ -101,46 +93,6 @@ RUN dnf install -y \
     && dnf clean all
 
 # ---------------------------------------------------------------------------
-# G0.3: Plymouth — motyw startowy BoobsOS
-#
-# Motyw 'boobsos' (two-step) z files/usr/share/plymouth/themes/boobsos/
-# (nakładany przez COPY files/ / wyżej).
-# ---------------------------------------------------------------------------
-RUN cp /usr/share/plymouth/themes/boobsos/watermark.png \
-       /usr/share/plymouth/themes/spinner/watermark.png \
-    || true
-
-RUN plymouth-set-default-theme boobsos \
-    || { mkdir -p /etc/plymouth \
-         && printf '[Daemon]\nTheme=boobsos\n' > /etc/plymouth/plymouthd.conf; } \
-    && echo "Plymouth theme: boobsos (OK)"
-
-# ---------------------------------------------------------------------------
-# G0.4: dconf — aktywacja ustawień GNOME
-#
-# Aktywuje pliki z etc/dconf/db/local.d/ i etc/dconf/db/gdm.d/.
-# Uruchamiamy po COPY files/ + COPY editions/game/files/ + instalacji rozszerzeń.
-# ---------------------------------------------------------------------------
-RUN dconf update \
-    && echo "dconf update: OK"
-
-# ---------------------------------------------------------------------------
-# G0.5: Ikona dystrybucji — odświeżenie cache motywu hicolor
-# ---------------------------------------------------------------------------
-RUN gtk4-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
-    || gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
-    || true
-
-# ---------------------------------------------------------------------------
-# G0.6: Włączenie Flathub i usługi first-boot
-#
-# Flathub jest rejestrowany automatycznie przez plik
-# files/etc/flatpak/remotes.d/flathub.flatpakrepo (COPY files/ / wyżej).
-# Usługa firstboot instaluje flatpaki gaming przy pierwszym uruchomieniu.
-# ---------------------------------------------------------------------------
-RUN systemctl enable boobsos-firstboot-flatpaks.service
-
-# ---------------------------------------------------------------------------
 # G0.7: Baseline bezpieczeństwa
 # ---------------------------------------------------------------------------
 RUN systemctl enable firewalld.service \
@@ -155,25 +107,9 @@ RUN systemctl enable bootc-fetch-apply-updates.timer \
     && echo "bootc auto-update timer — enabled"
 
 # ---------------------------------------------------------------------------
-# G0.9: Auto-dobór sterownika GPU po pierwszym boocie
-#
-# Domyślny obraz to wariant mesa (AMD/Intel/nouveau). Usługa first-boot wykrywa
-# kartę NVIDIA (lspci) i jeśli jest — przełącza system na wariant '-nvidia'
-# (bootc switch + restart). Czyli „system sam doinstalowuje sterownik po starcie",
-# bez pakowania NVIDIA do obrazów AMD/Intel. Na wariancie -nvidia usługa nic nie robi.
-# Skrypt + unit z editions/game/files/ (COPY wyżej). lspci wymaga pciutils.
-# ---------------------------------------------------------------------------
-RUN chmod +x /usr/libexec/boobsos-gpu-autorebase \
-    && systemctl enable boobsos-gpu-autorebase.service \
-    && echo "GPU autorebase service — enabled"
-
-# Upewnij się że narzędzie do przełączania edycji jest wykonywalne (idempotentne)
-RUN chmod +x /usr/bin/boobsos-edition
-
-# ---------------------------------------------------------------------------
 # G1: Brave Browser (przeglądarka dla gracza)
 #
-# Brave z files/etc/yum.repos.d/brave-browser.repo (nakładane przez COPY files/).
+# Brave z files/etc/yum.repos.d/brave-browser.repo (nakładane przez early COPY).
 # Wymaga usunięcia symlinku /opt → realny katalog (wzorzec Bazzite/ublue):
 # /opt to symlink → /var/opt (poza obrazem); rpm nie rozpakowałby plików.
 #
@@ -232,6 +168,84 @@ RUN dnf install -y \
     && dnf clean all
 
 # ---------------------------------------------------------------------------
+# LATE COPY — pełny overlay brandingowy i systemowy
+#
+# Branding, dconf, skel, tapety, plymouth, ikony, flatpak remotes.d,
+# usr/bin/boobsos-edition, usr/libexec/boobsos-install-flatpaks, firstboot service.
+# ZMIANA w tych plikach NIE przebudowuje warstw dnf powyżej.
+# ---------------------------------------------------------------------------
+COPY files/ /
+
+# ---------------------------------------------------------------------------
+# NADPISANIE dconf i plików edycji game — po files/
+#
+# Pliki z editions/game/files/ nakładamy PO files/, żeby nadpisać
+# 00-boobsos (favorite-apps) wersją gamingową, tapety i motyw plymouth.
+# Zawiera też: boobsos-gpu-autorebase (skrypt + unit), boobsos-install-flatpaks (game).
+# ---------------------------------------------------------------------------
+COPY editions/game/files/ /
+
+# ---------------------------------------------------------------------------
+# Kroki zależne od files/ — po late COPY
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# G0.3: Plymouth — motyw startowy BoobsOS
+#
+# Motyw 'boobsos' (two-step) z files/usr/share/plymouth/themes/boobsos/
+# (nakładany przez late COPY powyżej).
+# ---------------------------------------------------------------------------
+RUN cp /usr/share/plymouth/themes/boobsos/watermark.png \
+       /usr/share/plymouth/themes/spinner/watermark.png \
+    || true
+
+RUN plymouth-set-default-theme boobsos \
+    || { mkdir -p /etc/plymouth \
+         && printf '[Daemon]\nTheme=boobsos\n' > /etc/plymouth/plymouthd.conf; } \
+    && echo "Plymouth theme: boobsos (OK)"
+
+# ---------------------------------------------------------------------------
+# G0.4: dconf — aktywacja ustawień GNOME
+#
+# Aktywuje pliki z etc/dconf/db/local.d/ i etc/dconf/db/gdm.d/.
+# Uruchamiamy po obu COPY (files/ + editions/game/files/) + instalacji rozszerzeń.
+# ---------------------------------------------------------------------------
+RUN dconf update \
+    && echo "dconf update: OK"
+
+# ---------------------------------------------------------------------------
+# G0.5: Ikona dystrybucji — odświeżenie cache motywu hicolor
+# ---------------------------------------------------------------------------
+RUN gtk4-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
+    || gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
+    || true
+
+# ---------------------------------------------------------------------------
+# G0.6: Włączenie Flathub i usługi first-boot
+#
+# Flathub jest rejestrowany automatycznie przez plik
+# files/etc/flatpak/remotes.d/flathub.flatpakrepo (late COPY powyżej).
+# Usługa firstboot instaluje flatpaki gaming przy pierwszym uruchomieniu.
+# ---------------------------------------------------------------------------
+RUN systemctl enable boobsos-firstboot-flatpaks.service
+
+# ---------------------------------------------------------------------------
+# G0.9: Auto-dobór sterownika GPU po pierwszym boocie
+#
+# Domyślny obraz to wariant mesa (AMD/Intel/nouveau). Usługa first-boot wykrywa
+# kartę NVIDIA (lspci) i jeśli jest — przełącza system na wariant '-nvidia'
+# (bootc switch + restart). Czyli „system sam doinstalowuje sterownik po starcie",
+# bez pakowania NVIDIA do obrazów AMD/Intel. Na wariancie -nvidia usługa nic nie robi.
+# Skrypt + unit z editions/game/files/ (late COPY powyżej). lspci wymaga pciutils.
+# ---------------------------------------------------------------------------
+RUN chmod +x /usr/libexec/boobsos-gpu-autorebase \
+    && systemctl enable boobsos-gpu-autorebase.service \
+    && echo "GPU autorebase service — enabled"
+
+# Upewnij się że narzędzie do przełączania edycji jest wykonywalne (idempotentne)
+RUN chmod +x /usr/bin/boobsos-edition
+
+# ---------------------------------------------------------------------------
 # G3: dconf — finalne odświeżenie po G1+G2
 #
 # Uruchamiamy dconf update ponownie, żeby wbudować ewentualne klucze
@@ -244,7 +258,7 @@ RUN dconf update \
 # G4: Flatpaki gamingowe — skrypt first-boot
 #
 # Skrypt /usr/libexec/boobsos-install-flatpaks (nadpisany przez
-# COPY editions/game/files/ wyżej) zawiera listę:
+# late COPY editions/game/files/ powyżej) zawiera listę:
 #   com.valvesoftware.Steam       — Steam + Proton (gry Windows i Linux)
 #   net.lutris.Lutris             — Lutris (launcher: Wine, DOSBox, ScummVM, emulatory)
 #   com.heroicgameslauncher.hgl   — Heroic Games Launcher (Epic + GOG + Amazon)

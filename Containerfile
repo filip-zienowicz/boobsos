@@ -6,14 +6,17 @@
 FROM ghcr.io/ublue-os/silverblue-main:latest
 
 # ---------------------------------------------------------------------------
-# OVERLAY SYSTEMOWY
-# Pliki z katalogu files/ nakładamy na / obrazu.
-# Struktura: files/usr/..., files/etc/... → /usr/..., /etc/...
+# EARLY COPY — wyłącznie repozytoria + dnf.conf + CA
+#
+# Tylko te katalogi są potrzebne przez warstwy dnf poniżej.
+# Zmiana w files/usr/, files/etc/dconf/, files/etc/skel/, files/etc/systemd/,
+# files/usr/share/ itd. NIE unieważnia tych warstw.
 # ---------------------------------------------------------------------------
-COPY files/ /
+COPY files/etc/yum.repos.d/ /etc/yum.repos.d/
+COPY files/etc/dnf/ /etc/dnf/
+COPY files/etc/pki/ca-trust/source/anchors/ /etc/pki/ca-trust/source/anchors/
 
 # Aktywuj zaufane CA (registry.gitlab.cycr.us + repo.cycx.io) z anchora
-# files/etc/pki/ca-trust/source/anchors/cycr-us-ca.crt
 RUN update-ca-trust 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
@@ -43,16 +46,19 @@ RUN sed -i \
 RUN grep -q '^CPE_NAME=' /usr/lib/os-release \
     || echo 'CPE_NAME="cpe:/o:boobsos:boobsos:44"' >> /usr/lib/os-release
 
-# Dodaj VARIANT jeśli go nie ma (base-main może nie mieć VARIANT)
+# Ustaw VARIANT/VARIANT_ID na desktop — NADPISZ jeśli baza ma własne (silverblue
+# ma VARIANT_ID=silverblue). Force-replace (jak w edycji game), nie tylko append.
 RUN grep -q '^VARIANT=' /usr/lib/os-release \
-    || echo 'VARIANT="Desktop"' >> /usr/lib/os-release
+        && sed -i 's|^VARIANT=.*|VARIANT="Desktop"|' /usr/lib/os-release \
+        || echo 'VARIANT="Desktop"' >> /usr/lib/os-release
 RUN grep -q '^VARIANT_ID=' /usr/lib/os-release \
-    || echo 'VARIANT_ID=desktop' >> /usr/lib/os-release
+        && sed -i 's|^VARIANT_ID=.*|VARIANT_ID=desktop|' /usr/lib/os-release \
+        || echo 'VARIANT_ID=desktop' >> /usr/lib/os-release
 
 # ---------------------------------------------------------------------------
 # F2: pakiety DevOps + włączenie Flathub
 #
-# Repozytoria third-party nakładane przez overlay (COPY files/ / wyżej):
+# Repozytoria third-party nakładane przez early COPY powyżej:
 #   - files/etc/yum.repos.d/hashicorp.repo     → terraform, vault
 #   - files/etc/yum.repos.d/docker-ce.repo     → docker-ce, docker-compose-plugin
 #   - files/etc/yum.repos.d/kubernetes.repo    → kubectl (v1.31)
@@ -385,15 +391,12 @@ RUN ARCH="$(uname -m)" \
     && aws --version
 
 # ---------------------------------------------------------------------------
-# F2.12: Konfiguracja systemu — grupy i usługi
+# F2.12: Konfiguracja systemu — grupy i usługi zależne tylko od pakietów
 # ---------------------------------------------------------------------------
 
 # Utwórz grupę 'docker' (docker-ce powinien to zrobić, ale upewniamy się)
 # Użytkownicy muszą być dodani do grupy 'docker' po instalacji przez: usermod -aG docker $USER
 RUN groupadd -f docker
-
-# Upewnij się że narzędzie do przełączania edycji jest wykonywalne (idempotentne)
-RUN chmod +x /usr/bin/boobsos-edition
 
 # Włącz socket Dockera (preferowane nad docker.service — lazy start)
 # UWAGA: W obrazach bootc używamy 'systemctl enable' (preset), nie 'start'.
@@ -402,39 +405,6 @@ RUN systemctl enable docker.socket
 
 # Włącz socket Podmana (już może być w bazie UBlue, ale upewniamy się)
 RUN systemctl enable podman.socket
-
-# ---------------------------------------------------------------------------
-# F2.13: Włączenie Flathub (systemowy remote Flatpak)
-#
-# NIE instalujemy flatpaków w obrazie — tylko rejestrujemy Flathub jako remote.
-# Aplikacje GUI instaluje użytkownik po zalogowaniu, np.:
-#   flatpak install flathub com.visualstudio.code    # VSCode
-#   flatpak install flathub com.spotify.Client       # Spotify
-#   flatpak install flathub org.mozilla.firefox      # Firefox
-#   flatpak install flathub com.slack.Slack          # Slack
-#
-# Metoda DEKLARATYWNA (bootc-native): plik
-#   files/etc/flatpak/remotes.d/flathub.flatpakrepo
-# (prawdziwy flatpakrepo z wbudowanym kluczem GPG) jest nakładany przez COPY.
-# flatpak automatycznie rejestruje remote z /etc/flatpak/remotes.d/*.flatpakrepo —
-# bez potrzeby 'flatpak remote-add' i bez sieci w czasie buildu.
-# UWAGA: NIE używać tu komentarza-placeholdera — flatpak parsuje każdy plik
-#        w remotes.d i nieprawidłowy plik wywala operacje flatpak.
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# F3: branding w systemie
-#
-# Pliki nakładane przez COPY files/ / (wcześniej w tym Containerfile):
-#   files/usr/share/backgrounds/boobsos/boobsos.png        — tapeta (3840x2160)
-#   files/usr/share/backgrounds/boobsos/boobsos-dark.png   — tapeta ciemna
-#   files/etc/dconf/profile/user                           — profil dconf użytkownika
-#   files/etc/dconf/db/local.d/00-boobsos                  — ustawienia GNOME system-wide
-#   files/etc/dconf/db/gdm.d/01-boobsos                    — ustawienia GDM (logo)
-#   files/usr/share/pixmaps/boobsos-gdm-logo.png           — logo dla GDM
-#   files/usr/share/plymouth/themes/boobsos/               — motyw Plymouth
-#   files/etc/fastfetch/config.jsonc                       — konfiguracja fastfetch
-# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 # F3.1: Rozszerzenia GNOME Shell — tradycyjny desktop (taskbar na dole + tray)
@@ -460,87 +430,9 @@ RUN dnf install -y \
     && dnf clean all
 
 # ---------------------------------------------------------------------------
-# F3.2: Plymouth — motyw startowy BoobsOS
-#
-# Motyw 'boobsos' używa modułu two-step (dostępny w bazie silverblue-main).
-# ImageDir wskazuje na /usr/share/plymouth/themes/spinner (zawiera animację).
-# Nasze watermark.png (logo BoobsOS) nadpisuje watermark.png ze spinnera.
-# Tło: ciemny granat #080F1A, pasek postępu w kolorze marki (#2563EB).
-#
-# UWAGA: plymouth-set-default-theme bez flagi -R (--rebuild-initrd) —
-# rebuild initrd nie zadziała w kontenerze; initrd przebudowuje się
-# automatycznie przy pierwszym bootc upgrade/install na systemie docelowym.
-# ---------------------------------------------------------------------------
-# Skopiuj nasze watermark.png jako logo motywu (nadpisuje spinner watermark)
-RUN cp /usr/share/plymouth/themes/boobsos/watermark.png \
-       /usr/share/plymouth/themes/spinner/watermark.png
-
-# Ustaw motyw BoobsOS jako domyślny
-# Jeśli plymouth-set-default-theme zawiedzie, fallback do pliku conf
-RUN plymouth-set-default-theme boobsos \
-    || { mkdir -p /etc/plymouth \
-         && printf '[Daemon]\nTheme=boobsos\n' > /etc/plymouth/plymouthd.conf; } \
-    && echo "Plymouth theme: boobsos (OK)"
-
-# ---------------------------------------------------------------------------
-# F3.3: dconf — aktualizacja systemowej bazy kluczy
-#
-# Aktywuje pliki z etc/dconf/db/local.d/ i etc/dconf/db/gdm.d/.
-# Musi być po COPY files/ i instalacji rozszerzeń.
-# ---------------------------------------------------------------------------
-RUN dconf update \
-    && echo "dconf update: OK"
-
-# ---------------------------------------------------------------------------
-# F3.4: os-release — dodanie pól brandingowych ANSI i LOGO
-#
-# ANSI_COLOR: ANSI escape dla 'Brand Blue' #2563EB (RGB: 37,99,235)
-# LOGO: identyfikator logo dla systemd i innych narzędzi
-# Rozszerzamy istniejący sed z F1 — dodajemy brakujące pola jeśli ich nie ma.
-# ---------------------------------------------------------------------------
-RUN grep -q '^ANSI_COLOR=' /usr/lib/os-release \
-    || echo 'ANSI_COLOR="38;2;37;99;235"' >> /usr/lib/os-release
-RUN grep -q '^LOGO=' /usr/lib/os-release \
-    || echo 'LOGO=boobsos' >> /usr/lib/os-release
-
-# ---------------------------------------------------------------------------
-# F3.5: ikona logo dystrybucji (LOGO=boobsos)
-#
-# Logo BoobsOS jako ikona motywu 'boobsos' (z files/usr/share/icons/hicolor/).
-# Dzięki temu GNOME pokazuje je tam, gdzie używa LOGO z os-release:
-# gnome-tour (ekran powitalny), Ustawienia → Informacje, ekran logowania.
-# Odświeżamy cache motywu hicolor.
-# ---------------------------------------------------------------------------
-RUN gtk4-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
-    || gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
-    || true
-
-# ---------------------------------------------------------------------------
-# F2.14: Aplikacje desktop + baseline bezpieczeństwa
-#
-# Dodane w tej sekcji:
-#   A) VS Code (rpm, Microsoft repo) — edytor kodu gotowy od razu po instalacji
-#   B) openconnect + NetworkManager-openconnect{,-gnome} — VPN (Cisco AnyConnect/GlobalProtect)
-#   C) torbrowser-launcher — launcher pobierający i weryfikujący Tor Browser przy
-#      pierwszym uruchomieniu (standardowy sposób dla Fedory; pakiet z Fedora repo)
-#   D) OnlyOffice Desktop Editors — flatpak z Flathub, instalowany przy
-#      pierwszym boocie przez usługę systemd (patrz niżej)
-#   E) firewalld — zapora sieciowa; w bazie silverblue-main JUŻ zainstalowana i
-#      włączona (preset enabled). Zostaw domyślną strefę FedoraWorkstation (pozwala
-#      na SSH i porty > 1024 — sensowny default). `systemctl enable` to idemopotent.
-#   F) auditd — audyt systemu; w bazie silverblue-main JUŻ zainstalowany i włączony.
-#      Włączamy explicite na wypadek gdyby baza zmieniła preset.
-#   G) logrotate — rotacja logów; w bazie silverblue-main JUŻ zainstalowany i włączony
-#      (timer enabled). Polityka dystrybucji: files/etc/logrotate.d/boobsos.
-#
-# UWAGA WireGuard: wireguard-tools zainstalowany w F2.6. NetworkManager ma natywne
-# wsparcie WireGuard (nm-applet + nmcli) — nie potrzeba dodatkowego pakietu.
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
 # F2.14a: VS Code — edytor kodu (repo Microsoft)
 #
-# Repo: files/etc/yum.repos.d/vscode.repo (nakładane przez COPY files/ / wyżej).
+# Repo: files/etc/yum.repos.d/vscode.repo (nakładane przez early COPY powyżej).
 # Klucz GPG importujemy przed dnf install — bez tego dnf odmówi instalacji
 # ze względu na gpgcheck=1 w vscode.repo (pakiet podpisany kluczem Microsoft).
 # ---------------------------------------------------------------------------
@@ -579,23 +471,6 @@ RUN dnf install -y \
     && dnf clean all
 
 # ---------------------------------------------------------------------------
-# F2.14d: OnlyOffice — instalacja flatpaka przy pierwszym boocie
-#
-# OnlyOffice Desktop Editors nie ma dobrego rpm dla Fedory → flatpak z Flathub.
-# NIE instalujemy w czasie buildu obrazu (wymaga sieci i Flathub remote).
-# Zamiast tego: usługa systemd oneshot uruchamia się przy pierwszym boocie,
-# gdy sieć jest dostępna, instaluje flatpaki i tworzy stamp (nie startuje ponownie).
-#
-# Pliki (nakładane przez COPY files/ / wyżej):
-#   files/etc/systemd/system/boobsos-firstboot-flatpaks.service
-#   files/usr/libexec/boobsos-install-flatpaks  (skrypt, lista flatpaków na górze)
-#
-# Aby dodać kolejne flatpaki (Spotify, Slack, ...):
-#   dopisz ID do tablicy FLATPAKS w files/usr/libexec/boobsos-install-flatpaks
-# ---------------------------------------------------------------------------
-RUN systemctl enable boobsos-firstboot-flatpaks.service
-
-# ---------------------------------------------------------------------------
 # F2.14e: Baseline bezpieczeństwa — firewalld, auditd, logrotate
 #
 # Uwaga: wszystkie trzy pakiety są w bazie silverblue-main JUŻ zainstalowane
@@ -606,7 +481,7 @@ RUN systemctl enable boobsos-firstboot-flatpaks.service
 #   NIE zmieniamy strefy agresywnie — sensowny default dla stacji roboczej.
 # auditd: audyt syscalli, loguje do /var/log/audit/audit.log.
 # logrotate.timer: timer systemd rotujący logi (cotygodniowy; compress; 7 cykli).
-#   Polityka BoobsOS: files/etc/logrotate.d/boobsos (nakładana przez COPY).
+#   Polityka BoobsOS: files/etc/logrotate.d/boobsos (nakładana przez late COPY).
 # ---------------------------------------------------------------------------
 RUN systemctl enable firewalld.service \
     && systemctl enable auditd.service \
@@ -630,12 +505,6 @@ RUN systemctl enable bootc-fetch-apply-updates.timer \
 #
 # Cel: każdy nowy użytkownik tworzony przez useradd -m (np. 'boobs' w
 # Containerfile.vm) dostaje gotowe dotfiles z /etc/skel out-of-the-box.
-#
-# Co nakładamy przez COPY files/ / (wykonany wcześniej na początku Containerfile):
-#   files/etc/skel/.config/nvim/init.lua  — config neovim (lazy.nvim bootstrap,
-#       LSP/mason/treesitter/telescope). Pluginy + LSP instalują się przy 1. starcie.
-#   files/etc/skel/.zshrc                 — config zsh (oh-my-zsh, theme ys,
-#       plugins: git zsh-autosuggestions zsh-syntax-highlighting, aliasy ls/bat)
 #
 # Oh-my-zsh framework + pluginy: klonujemy do /etc/skel/.oh-my-zsh w buildzie,
 # bo skrypt instalacyjny wymaga sieci i runtime usera. useradd -m skopiuje
@@ -673,7 +542,7 @@ RUN git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh /etc/skel/.oh-my-zsh 
 # Repozytoria third-party:
 #   files/etc/yum.repos.d/google-chrome.repo  → Google Chrome Stable
 #   files/etc/yum.repos.d/brave-browser.repo  → Brave Browser
-# (nakładane przez COPY files/ / na początku Containerfile)
+# (nakładane przez early COPY powyżej)
 #
 # Desktop ID po instalacji (zweryfikowane przez dnf repoquery --list):
 #   google-chrome → /usr/share/applications/google-chrome.desktop
@@ -726,25 +595,6 @@ RUN dnf install -y \
     # --- Password recovery / audyt haseł (GPU-accelerated) ---
     hashcat \
     && dnf clean all
-
-# ---------------------------------------------------------------------------
-# F4.3: dconf — aktualizacja po dodaniu nowych ustawień
-#
-# Uruchamiamy dconf update ponownie po F4, by wbudować nowe klucze dconf
-# (favorite-apps z Brave) do bazy systemowej.
-# ---------------------------------------------------------------------------
-RUN dconf update \
-    && echo "dconf update F4: OK"
-
-# ---------------------------------------------------------------------------
-# F4.4: ekran powitalny — POMINIĘTE (rozwiązane inaczej)
-#
-# „Welcome to BoobsOS + Take Tour/Skip" z balonem to DIALOG POWITALNY GNOME SHELL
-# (welcome-dialog), a NIE gnome-tour. Jego grafika jest zaszyta w zasobach
-# gnome-shell. Zamiast kruchej podmiany gresource shella — wyłączamy ten
-# jednorazowy dialog przez dconf: org/gnome/shell welcome-dialog-last-shown-version
-# (patrz files/etc/dconf/db/local.d/00-boobsos). gnome-tour zostaje bez zmian.
-# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 # F2.16: Rozszerzony toolchain DevOps/SRE/security — pakiety RPM
@@ -922,6 +772,99 @@ RUN KUBESEAL_VERSION="0.29.0" \
     && chmod +x /usr/bin/lazydocker \
     && rm /tmp/lazydocker_amd64.tar.gz /tmp/lazydocker_arm64.tar.gz \
     && echo "F2.17 binarki: kubeseal helmfile k3d argocd flux cosign trivy syft grype terraform-docs tflint terragrunt dive ctop lazydocker — OK"
+
+# ---------------------------------------------------------------------------
+# LATE COPY — pełny overlay brandingowy i systemowy
+#
+# Branding, dconf, skel (zshrc/nvim), tapety, plymouth, ikony, flatpak remotes.d,
+# usr/bin/boobsos-edition, usr/libexec/*, firstboot service, logrotate policy.
+# ZMIANA w tym katalogu NIE przebudowuje warstw dnf powyżej.
+# ---------------------------------------------------------------------------
+COPY files/ /
+
+# ---------------------------------------------------------------------------
+# Kroki zależne od files/ — po late COPY
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# F3.2: Plymouth — motyw startowy BoobsOS
+#
+# Motyw 'boobsos' używa modułu two-step (dostępny w bazie silverblue-main).
+# ImageDir wskazuje na /usr/share/plymouth/themes/spinner (zawiera animację).
+# Nasze watermark.png (logo BoobsOS) nadpisuje watermark.png ze spinnera.
+# Tło: ciemny granat #080F1A, pasek postępu w kolorze marki (#2563EB).
+#
+# UWAGA: plymouth-set-default-theme bez flagi -R (--rebuild-initrd) —
+# rebuild initrd nie zadziała w kontenerze; initrd przebudowuje się
+# automatycznie przy pierwszym bootc upgrade/install na systemie docelowym.
+# ---------------------------------------------------------------------------
+# Skopiuj nasze watermark.png jako logo motywu (nadpisuje spinner watermark)
+RUN cp /usr/share/plymouth/themes/boobsos/watermark.png \
+       /usr/share/plymouth/themes/spinner/watermark.png
+
+# Ustaw motyw BoobsOS jako domyślny
+# Jeśli plymouth-set-default-theme zawiedzie, fallback do pliku conf
+RUN plymouth-set-default-theme boobsos \
+    || { mkdir -p /etc/plymouth \
+         && printf '[Daemon]\nTheme=boobsos\n' > /etc/plymouth/plymouthd.conf; } \
+    && echo "Plymouth theme: boobsos (OK)"
+
+# ---------------------------------------------------------------------------
+# F3.3: dconf — aktualizacja systemowej bazy kluczy
+#
+# Aktywuje pliki z etc/dconf/db/local.d/ i etc/dconf/db/gdm.d/.
+# Musi być po COPY files/ i instalacji rozszerzeń.
+# ---------------------------------------------------------------------------
+RUN dconf update \
+    && echo "dconf update: OK"
+
+# ---------------------------------------------------------------------------
+# F3.4: os-release — dodanie pól brandingowych ANSI i LOGO
+#
+# ANSI_COLOR: ANSI escape dla 'Brand Blue' #2563EB (RGB: 37,99,235)
+# LOGO: identyfikator logo dla systemd i innych narzędzi
+# Rozszerzamy istniejący sed z F1 — dodajemy brakujące pola jeśli ich nie ma.
+# ---------------------------------------------------------------------------
+RUN grep -q '^ANSI_COLOR=' /usr/lib/os-release \
+    || echo 'ANSI_COLOR="38;2;37;99;235"' >> /usr/lib/os-release
+RUN grep -q '^LOGO=' /usr/lib/os-release \
+    || echo 'LOGO=boobsos' >> /usr/lib/os-release
+
+# ---------------------------------------------------------------------------
+# F3.5: ikona logo dystrybucji (LOGO=boobsos)
+#
+# Logo BoobsOS jako ikona motywu 'boobsos' (z files/usr/share/icons/hicolor/).
+# Dzięki temu GNOME pokazuje je tam, gdzie używa LOGO z os-release:
+# gnome-tour (ekran powitalny), Ustawienia → Informacje, ekran logowania.
+# Odświeżamy cache motywu hicolor.
+# ---------------------------------------------------------------------------
+RUN gtk4-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
+    || gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
+    || true
+
+# Upewnij się że narzędzie do przełączania edycji jest wykonywalne (idempotentne)
+RUN chmod +x /usr/bin/boobsos-edition
+
+# Ustaw wykonywalne skrypty libexec (np. boobsos-install-flatpaks)
+RUN chmod +x /usr/libexec/boobsos-install-flatpaks \
+    || true
+
+# ---------------------------------------------------------------------------
+# F2.13 / F2.14d: Usługi zależne od plików z files/
+#
+# boobsos-firstboot-flatpaks.service — z files/etc/systemd/system/
+# (nakładane przez late COPY powyżej)
+# ---------------------------------------------------------------------------
+RUN systemctl enable boobsos-firstboot-flatpaks.service
+
+# ---------------------------------------------------------------------------
+# F4.3: dconf — aktualizacja po dodaniu nowych ustawień (F4 + late COPY)
+#
+# Uruchamiamy dconf update ponownie po F4, by wbudować nowe klucze dconf
+# (favorite-apps z Brave) do bazy systemowej.
+# ---------------------------------------------------------------------------
+RUN dconf update \
+    && echo "dconf update F4: OK"
 
 # ---------------------------------------------------------------------------
 # LINT — obowiązkowy krok dla obrazów bootc
