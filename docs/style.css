@@ -386,6 +386,9 @@ img { display: block; }
 .cards-grid--3 {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
+.cards-grid--2 {
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+}
 
 .card {
   background: var(--surface);
@@ -920,6 +923,79 @@ details[open] .faq-chevron {
   .terminal-line code {
     font-size: 0.8rem;
   }
+}
+
+/* ============================================================
+   EDITIONS — karty edycji z akcentami koloru
+   ============================================================ */
+
+/* Karta edycji Game — czerwony akcent */
+.card--edition-game {
+  border-color: hsl(0 72% 51% / 0.35);
+}
+.card--edition-game:hover {
+  border-color: hsl(0 72% 51% / 0.7);
+  box-shadow: 0 4px 32px hsl(0 72% 51% / 0.15);
+}
+.card--edition-game .card-icon {
+  background: hsl(0 72% 51% / 0.12);
+  color: hsl(0 72% 65%);
+}
+
+/* Karta edycji DevOps — niebieski akcent (lekko wzmocniony) */
+.card--edition-dev {
+  border-color: hsl(221 83% 53% / 0.35);
+}
+.card--edition-dev:hover {
+  border-color: hsl(221 83% 53% / 0.7);
+  box-shadow: 0 4px 32px hsl(221 83% 53% / 0.15);
+}
+.card--edition-dev .card-icon {
+  background: hsl(221 83% 53% / 0.12);
+  color: hsl(217 91% 70%);
+}
+
+/* Badże edycji */
+.edition-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.15em 0.55em;
+  border-radius: 100px;
+  vertical-align: middle;
+  margin-left: 0.3em;
+}
+.edition-badge--blue {
+  background: hsl(221 83% 53% / 0.18);
+  color: hsl(217 91% 70%);
+  border: 1px solid hsl(221 83% 53% / 0.4);
+}
+.edition-badge--red {
+  background: hsl(0 72% 51% / 0.18);
+  color: hsl(0 72% 70%);
+  border: 1px solid hsl(0 72% 51% / 0.4);
+}
+
+/* Notka o przełączaniu edycji pod kartami */
+.editions-switch-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.editions-switch-note svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: hsl(197 71% 60%);
 }
 
 /* ============================================================

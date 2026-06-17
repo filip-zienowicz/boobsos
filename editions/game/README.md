@@ -1,6 +1,7 @@
 # BoobsOS Game — edycja gamingowa
 
 Czysto gamingowa edycja BoobsOS — **bez stacku DevOps**.
+Wyróżniona **czerwonym motywem** (akcent #DC2626, tapeta, pasek startowy) — w odróżnieniu od edycji DevOps z niebieskim akcentem (#2563EB).
 Jeden Containerfile buduje **dwa warianty GPU** (wzorzec Bazzite/ublue):
 gaming RPM i flatpaki są wspólne; sterowniki GPU pochodzą z bazy.
 
@@ -71,6 +72,41 @@ sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game-nvidia:latest
 
 **Uwaga:** po przełączeniu na edycję Game znikają pakiety DevOps (Docker, kubectl, itp.) —
 to oddzielny obraz, nie nakładka.
+
+### Przełączanie edycji przez boobsos-edition
+
+Narzędzie `boobsos-edition` upraszcza przełączanie między edycjami BoobsOS.
+Dane użytkownika w `/home` są zawsze zachowane (wspólna partycja).
+
+```bash
+# Sprawdź aktualną edycję
+boobsos-edition status
+
+# Wyświetl dostępne edycje
+boobsos-edition list
+
+# Wróć do edycji DevOps
+boobsos-edition switch dev
+
+# Przełącz na Game (mesa — AMD/Intel)
+boobsos-edition switch game
+```
+
+Polecenie `switch` wykonuje `bootc switch` na odpowiedni obraz i restartuje system.
+Przy pierwszym uruchomieniu nowej edycji usługa `boobsos-firstboot-flatpaks` instaluje
+właściwe flatpaki (dla Game: Steam, Lutris, Heroic, ProtonUp-Qt, Discord, OBS).
+
+#### Auto-dobór wariantu NVIDIA
+
+Jeśli instalujesz edycję Game bez pewności co do GPU, zainstaluj domyślny wariant mesa:
+
+```bash
+sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game:latest
+```
+
+Usługa `boobsos-gpu-autorebase` wykrywa przy pierwszym boocie kartę NVIDIA i automatycznie
+przełącza (`bootc switch`) na wariant `boobsos-game-nvidia:latest`. Przy kolejnym restarcie
+system działa już ze sterownikami NVIDIA.
 
 ### Rollback
 

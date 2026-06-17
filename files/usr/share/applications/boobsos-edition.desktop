@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=BoobsOS Edition
+Name[pl]=BoobsOS Edycja
+Comment=Przełącz edycję BoobsOS (dev ↔ game)
+Comment[pl]=Przełącz edycję BoobsOS (dev ↔ game)
+Exec=bash -c 'boobsos-edition status; echo; boobsos-edition list; echo; read -p "Wpisz switch dev/game lub naciśnij Enter, by wyjść: " cmd; [ -n "$cmd" ] && boobsos-edition $cmd; read -p "Naciśnij Enter, by zamknąć..."'
+Terminal=true
+Type=Application
+Icon=boobsos
+Categories=System;Settings;
+Keywords=edition;edycja;boobsos;switch;game;dev;
+NoDisplay=false

@@ -388,6 +388,9 @@ RUN ARCH="$(uname -m)" \
 # Użytkownicy muszą być dodani do grupy 'docker' po instalacji przez: usermod -aG docker $USER
 RUN groupadd -f docker
 
+# Upewnij się że narzędzie do przełączania edycji jest wykonywalne (idempotentne)
+RUN chmod +x /usr/bin/boobsos-edition
+
 # Włącz socket Dockera (preferowane nad docker.service — lazy start)
 # UWAGA: W obrazach bootc używamy 'systemctl enable' (preset), nie 'start'.
 # docker.socket uruchamia docker.service na żądanie (lazy).

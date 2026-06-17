@@ -3,8 +3,26 @@
 Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śledzenie zmian").
 
 ## Zrobione
-- **Edycja Game (przepisana, czerwiec 2026)** — architektura zmieniona z `FROM boobsos:latest` (błąd: dziedziczyła cały DevOps) na `FROM ghcr.io/ublue-os/silverblue-nvidia:latest` (baza GNOME + sterowniki NVIDIA). Edycja Game jest teraz niezależna od BoobsOS base. Zawiera: branding/pulpit BoobsOS (F1+F3), Brave Browser, gaming RPM (gamemode, mangohud, gamescope, vulkan-tools, goverlay, steam-devices), flatpaki gaming (Steam, Lutris, Heroic, ProtonUp-Qt, Discord, OBS). Bez DevOps. Pliki zmienione: `editions/game/Containerfile`, `editions/game/files/usr/libexec/boobsos-install-flatpaks`, `editions/game/files/etc/dconf/db/local.d/00-boobsos` (nowy — favorite-apps gamingowy), `editions/game/README.md`, `.github/workflows/build-game.yml`, `README.md`.
-- **Edycja Game — dwa warianty GPU (czerwiec 2026)** — refaktor: jeden Containerfile → dwa obrazy przez `ARG BASE_IMAGE`. Domyślny: `silverblue-main` (mesa, AMD/Intel/nouveau) → `boobsos-game:latest`. Nvidia: `silverblue-nvidia` → `boobsos-game-nvidia:latest`. CI używa `strategy.matrix`. Gaming RPM i flatpaki identyczne w obu wariantach; sterowniki GPU z bazy. Pliki zmienione: `editions/game/Containerfile` (ARG/FROM), `.github/workflows/build-game.yml` (matrix), `editions/game/README.md` (dwa warianty), `README.md` (Edycje), `PROGRESS.md`.
+- **Edycja BoobsOS (DevOps, niebieski motyw #2563EB)** — obraz `ghcr.io/filip-zienowicz/boobsos:latest`. Pełny stack DevOps: Docker, Kubernetes, IaC, chmura, sekrety, narzędzia sieciowe, VS Code, Brave, tradycyjny pulpit GNOME.
+- **Edycja Game (czerwony motyw #DC2626, bez DevOps)** — architektura zmieniona z `FROM boobsos:latest` (błąd: dziedziczyła cały DevOps) na niezależną bazę ublue. Zawiera: branding/pulpit BoobsOS (czerwony akcent), Brave Browser, gaming RPM (gamemode, mangohud, gamescope, vulkan-tools, goverlay, steam-devices), flatpaki gaming (Steam, Lutris, Heroic, ProtonUp-Qt, Discord, OBS). Bez DevOps.
+- **Edycja Game — dwa warianty GPU (czerwiec 2026)** — jeden Containerfile z `ARG BASE_IMAGE` → dwa obrazy przez matrix CI:
+  - `boobsos-game:latest` (baza `silverblue-main`, mesa: AMD/Intel/nouveau)
+  - `boobsos-game-nvidia:latest` (baza `silverblue-nvidia`, akmod-nvidia preinstalowane)
+- **boobsos-edition** — narzędzie do przełączania edycji: `status` / `list` / `switch dev` / `switch game`. Wykonuje `bootc switch` + restart, `/home` współdzielone między edycjami.
+- **Auto-rebase GPU (boobsos-gpu-autorebase)** — usługa first-boot wykrywa kartę NVIDIA w wariancie mesa i automatycznie przełącza na `boobsos-game-nvidia:latest`.
+- **CI GitHub Actions + ghcr.io** — `build.yml` (boobsos:latest, schedule 05:00 UTC), `build-game.yml` (boobsos-game + boobsos-game-nvidia, matrix, schedule 05:30 UTC). Obrazy publiczne na `ghcr.io`.
+- **GitHub Pages** — strona projektu: https://filip-zienowicz.github.io/boobsos/. HTML + CSS zaktualizowane o edycje dev/game, motyw kolorów kart, narzędzie boobsos-edition.
+- **Branding (F0)** — logo przeniesione z `cycrus-ksef` do `branding/logo/`, paleta i zasady w `branding/BRANDING.md`.
+- **CLAUDE.md** — dopasowany do BoobsOS (kontekst projektu + branding).
+- **Decyzja: baza = Fedora**, model image-based (bootc/OCI). Szczegóły w `ARCHITECTURE.md`.
+- **F1** — scaffolding szkieletu repo + minimalny `Containerfile` (FROM UBlue base-main, os-release = BoobsOS, COPY files/).
+- **F2** — warstwa pakietów DevOps + włączenie Flathub:
+  - Repo overlay: `files/etc/yum.repos.d/` (hashicorp, docker-ce, kubernetes v1.31, azure-cli, google-cloud-cli).
+  - COPR: atim/lazygit, jdx/mise, opentofu/opentofu.
+  - Zainstalowane kategorie: Docker CE, kubectl/helm/k9s/kubectx/kustomize, terraform/opentofu/ansible, narzędzia sieciowe, zsh/git/gh/glab, CLI UX (bat, eza, fzf, ripgrep, starship, lazygit, just, fastfetch, neovim, …), sekrety (vault, age, sops), build (golang, @development-tools, mise), chmura (azure-cli, google-cloud-cli, awscli2 przez bundle).
+  - Binarki z GitHub: stern v1.30.0, kind v0.24.0, sops v3.9.1, AWS CLI v2.
+  - Systemctl enable: docker.socket, podman.socket.
+  - Flathub: `flatpak remote-add --system` (NIE instalujemy flatpaków w obrazie).
 - **Branding (F0)** — logo przeniesione z `cycrus-ksef` do `branding/logo/`, paleta i zasady w `branding/BRANDING.md`.
 - **CLAUDE.md** — dopasowany do BoobsOS (kontekst projektu + branding).
 - **Decyzja: baza = Fedora**, model image-based (bootc/OCI). Szczegóły w `ARCHITECTURE.md`.
@@ -225,10 +243,10 @@ Warstwa gamingowa na wierzchu `ghcr.io/filip-zienowicz/boobsos:latest` (DRY — 
 sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game:latest
 ```
 
-## Następne (wg roadmapy w ARCHITECTURE.md)
-- **F5** — CI + publikacja obrazu do rejestru (ghcr.io lub quay.io)
-- **F6** — Generowanie ISO przez bootc-image-builder, test instalacji w VM
-- **F7** — Dokumentacja użytkownika
+## Następne / W toku
+- **repo.cycx.io** — własny rejestr produkcyjny (w toku); docelowo obrazy migrują z ghcr.io.
+- **F6 — ISO + VM** — generowanie ISO przez `bootc-image-builder`, test instalacji w VM Fedora 44 (planowane).
+- **F7 — Dokumentacja** — rozbudowa docs/index.html, FAQ Gaming, strona edycji Game.
 
 ## Założenia
 - System dostarczany jako obraz OCI; ISO generowane przez `bootc-image-builder`.

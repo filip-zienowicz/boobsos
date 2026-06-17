@@ -96,8 +96,16 @@ Menu Start (Arc Menu) nie jest dostępne w Fedora 44 jako pakiet rpm — użytko
 
 ## CI/CD
 
-Pipeline GitLab (`.gitlab-ci.yml`) buduje obraz przy każdym push i publikuje go
-do GitLab Container Registry przy push na gałąź `main`.
+**GitHub Actions** buduje obrazy przy każdym push na `main` i codziennie o 5:00 UTC.
+Gotowe obrazy trafiają do publicznego rejestru `ghcr.io` (GitHub Container Registry).
+Strona projektu hostowana jest na **GitHub Pages**: https://filip-zienowicz.github.io/boobsos/
+
+| Workflow | Trigger | Wynik |
+|----------|---------|-------|
+| `build.yml` | push main + schedule 05:00 UTC | `ghcr.io/filip-zienowicz/boobsos:latest` |
+| `build-game.yml` | push editions/game/** + schedule 05:30 UTC | `boobsos-game:latest` + `boobsos-game-nvidia:latest` |
+
+Docelowy rejestr produkcyjny: `repo.cycx.io` (w toku).
 
 ---
 
@@ -128,30 +136,56 @@ do GitLab Container Registry przy push na gałąź `main`.
 
 ## Edycje
 
-BoobsOS dostępny w trzech niezależnych obrazach.
+BoobsOS dostępny w dwóch edycjach (trzy obrazy OCI).
 
-| Edycja | Obraz | Baza | Opis |
-|--------|-------|------|------|
-| **Bazowa** | `ghcr.io/filip-zienowicz/boobsos:latest` | ublue silverblue-main | Stack DevOps: Docker, K8s, VS Code, Brave, branding |
-| **Game (mesa)** | `ghcr.io/filip-zienowicz/boobsos-game:latest` | ublue silverblue-main | Gamingowa: Steam, Lutris, Heroic, MangoHud, Gamescope, Brave, Discord, OBS — **BEZ DevOps**, AMD/Intel/nouveau (otwarte sterowniki) |
-| **Game (nvidia)** | `ghcr.io/filip-zienowicz/boobsos-game-nvidia:latest` | ublue silverblue-nvidia | Jak Game mesa + **preinstalowane sterowniki NVIDIA** (akmod-nvidia) |
+| Edycja | Motyw | Obraz | Baza | Opis |
+|--------|-------|-------|------|------|
+| **BoobsOS** | Niebieski (#2563EB) | `ghcr.io/filip-zienowicz/boobsos:latest` | ublue silverblue-main | Stack DevOps: Docker, K8s, VS Code, Brave, branding |
+| **BoobsOS Game (mesa)** | Czerwony (#DC2626) | `ghcr.io/filip-zienowicz/boobsos-game:latest` | ublue silverblue-main | Gamingowa: Steam, Lutris, Heroic, MangoHud, Gamescope, Brave, Discord, OBS — **BEZ DevOps**, AMD/Intel/nouveau |
+| **BoobsOS Game (nvidia)** | Czerwony (#DC2626) | `ghcr.io/filip-zienowicz/boobsos-game-nvidia:latest` | ublue silverblue-nvidia | Jak Game mesa + **preinstalowane sterowniki NVIDIA** (akmod-nvidia) |
 
-Edycja Game jest **niezależna** od bazowej — nie dziedziczy stacku DevOps.
-Jeden Containerfile (`editions/game/Containerfile`) budowany z `ARG BASE_IMAGE` produkuje dwa obrazy
+Edycja Game jest **niezależna** od BoobsOS base — nie dziedziczy stacku DevOps.
+Jeden Containerfile (`editions/game/Containerfile`) budowany z `ARG BASE_IMAGE` produkuje dwa obrazy GPU
 (wzorzec Bazzite). AMD/Intel używają otwartych sterowników z jądra; NVIDIA wymaga osobnej bazy ublue.
+
+### Instalacja edycji BoobsOS (DevOps)
+
+```bash
+sudo bootc switch ghcr.io/filip-zienowicz/boobsos:latest
+```
 
 ### Instalacja edycji Game
 
 ```bash
-# AMD/Intel (domyślny wariant — lekki):
+# AMD/Intel (domyślny wariant — mesa, otwarte sterowniki):
 sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game:latest
 
-# NVIDIA:
+# NVIDIA (preinstalowane akmod-nvidia):
 sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game-nvidia:latest
 ```
 
 Po restarcie usługa `boobsos-firstboot-flatpaks` zainstaluje Steam, Lutris, Heroic, ProtonUp-Qt, Discord i OBS Studio.
 Szczegóły: [editions/game/README.md](editions/game/README.md).
+
+### Przełączanie edycji
+
+Narzędzie `boobsos-edition` pozwala sprawdzić aktualną edycję i przełączyć się między nimi bez utraty danych (`/home` jest wspólny).
+
+```bash
+# Sprawdź aktualną edycję
+boobsos-edition status
+
+# Lista dostępnych edycji
+boobsos-edition list
+
+# Przełącz na edycję DevOps
+boobsos-edition switch dev
+
+# Przełącz na edycję Game (mesa)
+boobsos-edition switch game
+```
+
+Polecenie `switch` wykonuje `bootc switch` na odpowiedni obraz i restartuje system. Dane użytkownika w `/home` pozostają niezmienione.
 
 ---
 
@@ -164,6 +198,8 @@ Szczegóły: [editions/game/README.md](editions/game/README.md).
 | F2 | Pakiety DevOps + Flathub | ✅ |
 | F3 | Branding w systemie (Plymouth, GDM, tapeta, tradycyjny desktop) | ✅ |
 | F4 | Przeglądarki (Chrome+Brave), hping3+hashcat, hostname, Desktop w Nautilusie, favorite-apps | ✅ |
-| F5 | CI + publikacja obrazu do rejestru | ⬜ |
-| F6 | Generowanie ISO, test w VM | ⬜ |
-| F7 | Dokumentacja użytkownika | ⬜ |
+| F5 | CI + publikacja obrazu do ghcr.io + GitHub Pages | ✅ |
+| F5a | Edycja Game (dwa warianty GPU: mesa + nvidia), narzędzie boobsos-edition | ✅ |
+| F6 | Generowanie ISO (bootc-image-builder), test w VM Fedora 44 | 🔄 planowane |
+| F6a | Własny rejestr produkcyjny (repo.cycx.io) | 🔄 w toku |
+| F7 | Dokumentacja użytkownika | 🔄 w toku |

@@ -164,6 +164,9 @@ RUN chmod +x /usr/libexec/boobsos-gpu-autorebase \
     && systemctl enable boobsos-gpu-autorebase.service \
     && echo "GPU autorebase service — enabled"
 
+# Upewnij się że narzędzie do przełączania edycji jest wykonywalne (idempotentne)
+RUN chmod +x /usr/bin/boobsos-edition
+
 # ---------------------------------------------------------------------------
 # G1: Brave Browser (przeglądarka dla gracza)
 #

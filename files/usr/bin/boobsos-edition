@@ -1,0 +1,335 @@
+#!/usr/bin/env bash
+# boobsos-edition — przełączanie edycji BoobsOS (dev ↔ game)
+#
+# Komendy:
+#   boobsos-edition [status]      — pokaż aktualną edycję
+#   boobsos-edition list          — wypisz dostępne edycje z ref
+#   boobsos-edition switch <dev|game> [--yes] [--apply]
+#                                 — przełącz edycję
+#   boobsos-edition -h|--help     — pomoc
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Pomocnicze funkcje
+# ---------------------------------------------------------------------------
+
+usage() {
+    cat <<'EOF'
+Użycie: boobsos-edition <komenda> [opcje]
+
+Komendy:
+  status              Pokaż aktualną edycję (domyślna komenda)
+  list                Wypisz dostępne edycje z docelowymi obrazami
+  switch <dev|game>   Przełącz edycję
+    --yes             Nie pytaj o potwierdzenie
+    --apply           Zrestartuj od razu po przełączeniu (bootc switch --apply)
+
+Przykłady:
+  boobsos-edition
+  boobsos-edition switch game
+  boobsos-edition switch dev --yes --apply
+EOF
+}
+
+# Wyciągaj aktualny ref obrazu z `bootc status`
+get_current_ref() {
+    bootc status 2>/dev/null \
+        | grep -oE '[A-Za-z0-9._/-]+boobsos(-game(-nvidia)?)?[A-Za-z0-9._:@/-]*' \
+        | head -1 \
+        || true
+}
+
+# Wyznacz "produkt" (boobsos / boobsos-game / boobsos-game-nvidia) z ref
+# np. ghcr.io/filip-zienowicz/boobsos-game:latest → boobsos-game
+get_product_from_ref() {
+    local ref="$1"
+    # Pasujemy do ostatniego segmentu ścieżki przed tagiem
+    local name
+    name="$(echo "$ref" | sed 's|.*/||; s|:.*||; s|@.*||')"
+    echo "$name"
+}
+
+# Wyznacz edycję z produktu
+product_to_edition() {
+    case "$1" in
+        boobsos)              echo "dev" ;;
+        boobsos-game)         echo "game" ;;
+        boobsos-game-nvidia)  echo "game (nvidia)" ;;
+        *)                    echo "nieznana" ;;
+    esac
+}
+
+# Wyznacz registry+namespace z ref (wszystko przed ostatnim /produkt:tag)
+# np. ghcr.io/filip-zienowicz/boobsos-game:latest → ghcr.io/filip-zienowicz
+get_registry_ns() {
+    local ref="$1"
+    # Odetnij ostatni segment (produkt:tag lub produkt@sha256:...)
+    echo "$ref" | sed 's|/[^/]*$||'
+}
+
+# Wyciągaj tag z ref (domyślnie: latest)
+get_tag_from_ref() {
+    local ref="$1"
+    local tag
+    tag="$(echo "$ref" | grep -oE ':[A-Za-z0-9._-]+$' | sed 's/^://' || true)"
+    if [ -z "$tag" ]; then
+        echo "latest"
+    else
+        echo "$tag"
+    fi
+}
+
+# Odczytaj VARIANT_ID z os-release jako fallback
+get_variant_id() {
+    local variant_id=""
+    if [ -f /usr/lib/os-release ]; then
+        variant_id="$(grep -oE '^VARIANT_ID=.*' /usr/lib/os-release | cut -d= -f2 | tr -d '"' || true)"
+    fi
+    echo "$variant_id"
+}
+
+# Odczytaj VARIANT (opis ludzki) z os-release
+get_variant() {
+    local variant=""
+    if [ -f /usr/lib/os-release ]; then
+        variant="$(grep -oE '^VARIANT=.*' /usr/lib/os-release | cut -d= -f2 | tr -d '"' || true)"
+    fi
+    echo "$variant"
+}
+
+# Wykryj GPU NVIDIA przez lspci
+has_nvidia_gpu() {
+    if ! command -v lspci &>/dev/null; then
+        return 2  # brak lspci
+    fi
+    lspci -nn 2>/dev/null | grep -iE 'VGA|3D|Display' | grep -qi nvidia
+}
+
+# ---------------------------------------------------------------------------
+# Komendy
+# ---------------------------------------------------------------------------
+
+cmd_status() {
+    local ref
+    ref="$(get_current_ref)"
+
+    local edition product variant
+    if [ -n "$ref" ]; then
+        product="$(get_product_from_ref "$ref")"
+        edition="$(product_to_edition "$product")"
+    else
+        # Fallback z os-release
+        local variant_id
+        variant_id="$(get_variant_id)"
+        case "$variant_id" in
+            game) product="boobsos-game"; edition="game" ;;
+            *)    product="boobsos";      edition="dev" ;;
+        esac
+        ref="(nieznany — bootc status niedostępne)"
+    fi
+
+    variant="$(get_variant)"
+    [ -n "$variant" ] && local variant_str=" ($variant)" || local variant_str=""
+
+    echo "Edycja: BoobsOS $(echo "$edition" | sed 's/\b./\u&/')${variant_str} — ${ref}"
+}
+
+cmd_list() {
+    local ref
+    ref="$(get_current_ref)"
+
+    local registry_ns tag
+    if [ -n "$ref" ]; then
+        registry_ns="$(get_registry_ns "$ref")"
+        tag="$(get_tag_from_ref "$ref")"
+    else
+        registry_ns="<registry>/<namespace>"
+        tag="latest"
+    fi
+
+    local current_product=""
+    [ -n "$ref" ] && current_product="$(get_product_from_ref "$ref")"
+
+    mark_current() {
+        [ "$1" = "$current_product" ] && echo " ← aktualna" || echo ""
+    }
+
+    echo "Dostępne edycje BoobsOS:"
+    echo ""
+    printf "  %-12s  %s\n" "dev" "${registry_ns}/boobsos:${tag}$(mark_current boobsos)"
+    printf "  %-12s  %s\n" "game" "${registry_ns}/boobsos-game:${tag}$(mark_current boobsos-game)"
+    printf "  %-12s  %s\n" "game-nvidia" "${registry_ns}/boobsos-game-nvidia:${tag}$(mark_current boobsos-game-nvidia)"
+    echo ""
+    echo "Aby przełączyć: boobsos-edition switch <dev|game>"
+}
+
+cmd_switch() {
+    local target_edition="${1:-}"
+    local opt_yes=false
+    local opt_apply=false
+    shift || true
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --yes)   opt_yes=true ;;
+            --apply) opt_apply=true ;;
+            *)
+                echo "Nieznana opcja: $1" >&2
+                usage >&2
+                exit 1
+                ;;
+        esac
+        shift
+    done
+
+    if [ -z "$target_edition" ]; then
+        echo "Błąd: podaj edycję (dev lub game)" >&2
+        usage >&2
+        exit 1
+    fi
+
+    case "$target_edition" in
+        dev|game) ;;
+        *)
+            echo "Błąd: nieznana edycja '$target_edition'. Dozwolone: dev, game" >&2
+            exit 1
+            ;;
+    esac
+
+    # Wyznacz aktualny ref
+    local ref
+    ref="$(get_current_ref)"
+
+    local registry_ns tag current_product
+    if [ -n "$ref" ]; then
+        registry_ns="$(get_registry_ns "$ref")"
+        tag="$(get_tag_from_ref "$ref")"
+        current_product="$(get_product_from_ref "$ref")"
+    else
+        echo "Ostrzeżenie: nie udało się odczytać aktualnego ref przez bootc status." >&2
+        echo "Używam fallbacku z os-release." >&2
+        registry_ns=""
+        tag="latest"
+        local variant_id
+        variant_id="$(get_variant_id)"
+        case "$variant_id" in
+            game) current_product="boobsos-game" ;;
+            *)    current_product="boobsos" ;;
+        esac
+    fi
+
+    # Wyznacz docelowy produkt
+    local target_product
+    case "$target_edition" in
+        dev)
+            target_product="boobsos"
+            ;;
+        game)
+            # Wykryj GPU NVIDIA
+            local nvidia_status
+            has_nvidia_gpu
+            nvidia_status=$?
+            case $nvidia_status in
+                0) target_product="boobsos-game-nvidia" ;;
+                2)
+                    echo "Ostrzeżenie: brak polecenia lspci (pciutils). Nie można wykryć GPU NVIDIA." >&2
+                    echo "Domyślnie używam wariantu mesa (bez NVIDIA)." >&2
+                    target_product="boobsos-game"
+                    ;;
+                *)
+                    target_product="boobsos-game"
+                    ;;
+            esac
+            ;;
+    esac
+
+    # Sprawdź czy już na żądanej edycji
+    if [ "$current_product" = "$target_product" ]; then
+        local current_edition
+        current_edition="$(product_to_edition "$current_product")"
+        echo "Jesteś już w edycji '${current_edition}' (${current_product}). Nic do zrobienia."
+        exit 0
+    fi
+
+    # Wyznacz pełny cel
+    local target_ref
+    if [ -n "$registry_ns" ]; then
+        target_ref="${registry_ns}/${target_product}:${tag}"
+    else
+        echo "Błąd: nie można wyznaczyć docelowego ref (brak registry/namespace)." >&2
+        echo "Sprawdź 'bootc status' i spróbuj ponownie." >&2
+        exit 1
+    fi
+
+    # Pokaż plan i poproś o potwierdzenie
+    echo ""
+    echo "Przełączenie edycji BoobsOS:"
+    echo "  Aktualnie:  ${current_product} ($(product_to_edition "$current_product"))"
+    echo "  Docelowo:   ${target_ref} ($(product_to_edition "$target_product"))"
+    echo ""
+
+    if [ "$opt_apply" = true ]; then
+        echo "  Tryb: --apply — system zostanie zrestartowany natychmiast po przełączeniu."
+    else
+        echo "  Po przełączeniu: zrestartuj system, by wejść w nową edycję."
+    fi
+    echo ""
+
+    if [ "$opt_yes" = false ]; then
+        read -r -p "Czy na pewno chcesz przełączyć? [t/N] " confirm
+        case "$confirm" in
+            [tTyY]*) ;;
+            *)
+                echo "Anulowano."
+                exit 0
+                ;;
+        esac
+    fi
+
+    # Sprawdź uprawnienia root
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "Przełączenie wymaga uprawnień root. Wywołuję przez sudo..."
+        if [ "$opt_apply" = true ]; then
+            exec sudo bootc switch --apply "$target_ref"
+        else
+            exec sudo bootc switch "$target_ref"
+        fi
+    fi
+
+    # Uruchom bootc switch
+    if [ "$opt_apply" = true ]; then
+        bootc switch --apply "$target_ref"
+    else
+        bootc switch "$target_ref"
+        echo ""
+        echo "Gotowe! Zrestartuj system, by wejść w nową edycję:"
+        echo "  systemctl reboot"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Punkt wejścia
+# ---------------------------------------------------------------------------
+
+CMD="${1:-status}"
+shift || true
+
+case "$CMD" in
+    status)
+        cmd_status
+        ;;
+    list)
+        cmd_list
+        ;;
+    switch)
+        cmd_switch "$@"
+        ;;
+    -h|--help|help)
+        usage
+        ;;
+    *)
+        echo "Nieznana komenda: $CMD" >&2
+        usage >&2
+        exit 1
+        ;;
+esac
