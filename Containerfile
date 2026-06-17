@@ -607,6 +607,18 @@ RUN systemctl enable firewalld.service \
     && echo "Usługi bezpieczeństwa: firewalld auditd logrotate.timer — enabled"
 
 # ---------------------------------------------------------------------------
+# Auto-aktualizacje BoobsOS (bootc)
+#
+# Timer bootc co jakiś czas sprawdza rejestr, z którego zainstalowano system
+# (origin = registry.gitlab.cycr.us/fzienowicz/boobsos), pobiera nowy obraz
+# BoobsOS i stosuje go atomowo przy następnym restarcie. To AKTUALIZACJE BoobsOS,
+# nie Fedory — Fedora to tylko baza zapieczona w naszym obrazie.
+# W bazie timer jest 'disabled' — włączamy go, by użytkownicy dostawali update'y.
+# ---------------------------------------------------------------------------
+RUN systemctl enable bootc-fetch-apply-updates.timer \
+    && echo "bootc auto-update timer — enabled"
+
+# ---------------------------------------------------------------------------
 # F2.15: Domyślne configi (neovim + oh-my-zsh)
 #
 # Cel: każdy nowy użytkownik tworzony przez useradd -m (np. 'boobs' w
