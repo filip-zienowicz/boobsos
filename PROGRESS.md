@@ -243,9 +243,42 @@ Warstwa gamingowa na wierzchu `ghcr.io/filip-zienowicz/boobsos:latest` (DRY — 
 sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game:latest
 ```
 
+## F6 — ISO + test instalacji (ZROBIONE / zweryfikowane)
+
+Instalacyjne ISO (Anaconda przez `bootc-image-builder`, `--type anaconda-iso`)
+zbudowane i **przetestowane end-to-end** na Proxmox `root@ms01` (VM 105, OVMF/UEFI):
+
+- ISO bootuje → instalator z brandingiem **"BOOBSOS 44 INSTALLATION"** (tytuł, nazwa
+  produktu z `PRETTY_NAME`).
+- Auto-instalacja (kickstart bib: `ostreecontainer` z obrazu w ISO + autopart ext4)
+  wdraża system → 3 partycje: ESP 600M, /boot 2G, root ~57G.
+- Bootloader spójny: ESP `/EFI/fedora/{shim,grub,grub.cfg}` + fallback
+  `/EFI/BOOT/BOOTX64.EFI`; `BOOT_UUID` w bootuuid.cfg == UUID partycji /boot; BLS
+  `ostree-1.conf` obecny.
+- **Boot z dysku → GDM z brandingiem BoobsOS** (logo łabędzia w heksagonie, ciemny
+  motyw, user `boobs`). Wpis GRUB: `BoobsOS (ostree:0)`.
+
+### Pułapki rozwiązane podczas testu
+- **`bootc switch --mutate-in-place` w %post** (kickstart bib, origin → rejestr) NIE
+  pobiera obrazu — tylko przepisuje metadane origin. 401 z prywatnego rejestru nie
+  przerywa instalacji.
+- **PVE nie honoruje `reboot --eject`** z kickstartu → CD bootuje ponownie → pętla
+  reinstalacji; `clearpart` drugiej instalacji psuje bootloader pierwszej (niespójne
+  UUID ESP vs /boot → GRUB `no such device`). **Fix testowy:** boot order
+  `scsi0;ide2` (pusty dysk → fallback na CD → po instalacji dysk bootowalny wygrywa,
+  brak pętli). Na realnym sprzęcie eject/wyjęcie nośnika działa normalnie.
+- **VARIANT_ID** finalnie `desktop` (force-replace w Containerfile, commit `7797ba9`);
+  obraz na ghcr zweryfikowany. Finalna ISO budowana z `ghcr.io/.../boobsos:latest`.
+- **def `boobsos-44.yaml`** trackowany w repo i montowany w build-iso.sh oraz CI
+  (bez tego bib nie znajdował def dla `ID=boobsos`).
+
 ## Następne / W toku
 - **repo.cycx.io** — własny rejestr produkcyjny (w toku); docelowo obrazy migrują z ghcr.io.
-- **F6 — ISO + VM** — generowanie ISO przez `bootc-image-builder`, test instalacji w VM Fedora 44 (planowane).
+- **Origin auto-update**: ISO testowa wskazuje na `ghcr.io` (publiczny → aktualizacje działają
+  out-of-box). Dla `gitlab.cycr.us:5050` (wewnętrzny, prywatny) trzeba dostarczyć
+  klientom pull-secret (`/etc/ostree/auth.json`) — decyzja wdrożeniowa.
+- **Branding instalatora — sidebar logo** wciąż Fedora; wymaga paczki `boobsos-logos`
+  zastępującej `fedora-logos` (koegzystencja plików nie wystarcza). Tytuł/nazwa już OK.
 - **F7 — Dokumentacja** — rozbudowa docs/index.html, FAQ Gaming, strona edycji Game.
 
 ## Założenia
