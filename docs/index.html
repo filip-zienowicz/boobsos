@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pl" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BoobsOS — DevOps desktop, gotowy od razu</title>
+  <meta name="description" content="BoobsOS to desktopowy Linux dla DevOps, programistów i inżynierów IT — gotowy do pracy zaraz po instalacji. Cały toolchain, zero setupu, pełny rollback." />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/boobsos-icon.png" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ========== NAVBAR ========== -->
+  <header class="navbar">
+    <div class="container navbar-inner">
+      <a href="#" class="navbar-brand" aria-label="BoobsOS — strona główna">
+        <img src="assets/boobsos-logo.png" alt="Logo BoobsOS" class="navbar-logo" width="36" height="36" />
+        <span class="navbar-name">BoobsOS</span>
+      </a>
+      <nav aria-label="Główna nawigacja">
+        <ul class="navbar-links">
+          <li><a href="#why">Dlaczego</a></li>
+          <li><a href="#toolbox">Narzędzia</a></li>
+          <li><a href="#how">Jak działa</a></li>
+          <li><a href="#install">Instalacja</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li>
+            <a href="https://github.com/filip-zienowicz/boobsos" class="btn btn-sm" target="_blank" rel="noopener">
+              GitHub
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ========== HERO ========== -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-grid" aria-hidden="true"></div>
+    <div class="container hero-content">
+      <div class="hero-badge">Early Access</div>
+      <img src="assets/boobsos-logo.png" alt="Logo BoobsOS — łabędź w heksagonie" class="hero-logo" width="120" height="120" />
+      <h1 id="hero-title" class="hero-title">BoobsOS</h1>
+      <p class="hero-tagline">Cały toolchain. Zero setupu. Pełny rollback.</p>
+      <p class="hero-sub">
+        Desktopowy Linux dla DevOps, programistów i inżynierów IT —<br />
+        gotowy do pracy <strong>zaraz po instalacji</strong>.
+      </p>
+      <div class="hero-ctas">
+        <a href="https://github.com/filip-zienowicz/boobsos" class="btn btn-primary" target="_blank" rel="noopener">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+        <a href="#install" class="btn btn-outline">Jak zainstalować</a>
+      </div>
+    </div>
+    <div class="hero-scroll" aria-hidden="true">
+      <span></span>
+    </div>
+  </section>
+
+  <!-- ========== DLACZEGO BOOBSOS ========== -->
+  <section class="section" id="why" aria-labelledby="why-title">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Value props</span>
+        <h2 id="why-title" class="section-title">Dlaczego BoobsOS?</h2>
+        <p class="section-sub">Nie kolejna dystrybucja. Opinionated setup, który po prostu działa.</p>
+      </div>
+      <div class="cards-grid cards-grid--3">
+
+        <article class="card card--glow">
+          <div class="card-icon">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <h3>Gotowy z pudełka</h3>
+          <p>Kompletny zestaw DevOps preinstalowany i skonfigurowany. Kubectl, Terraform, Docker, AWS CLI — wszystko gotowe po pierwszym uruchomieniu. Zero „dzień zero" setupu.</p>
+        </article>
+
+        <article class="card card--glow">
+          <div class="card-icon">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Atomowy i niezniszczalny</h3>
+          <p>Aktualizacje jako całe obrazy OCI. Jedno polecenie <code>bootc rollback</code> cofa system do poprzedniego stanu. System się nie „rozjeżdża" — nigdy.</p>
+        </article>
+
+        <article class="card card--glow">
+          <div class="card-icon">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <h3>Reprodukowalny</h3>
+          <p>Cały OS zdefiniowany jak <code>Containerfile</code>. Ten sam obraz na każdej maszynie. Idealny dla zespołów i flot — koniec z „u mnie działa".</p>
+        </article>
+
+        <article class="card card--glow">
+          <div class="card-icon">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <h3>Oparty na Fedorze</h3>
+          <p>Świeże jądro Linuksa i toolchainy. Ekosystem RPM + Flatpak (Flathub) + Homebrew. Federacja sprawdzonej bazy z DevOps-owym wierzchem.</p>
+        </article>
+
+        <article class="card card--glow">
+          <div class="card-icon">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          </div>
+          <h3>Container-native</h3>
+          <p>Docker i Podman obok siebie. Distrobox i Toolbox do izolacji środowisk. Buildah i Skopeo do budowania i inspekcji obrazów. Wszystko gotowe.</p>
+        </article>
+
+        <article class="card card--glow">
+          <div class="card-icon">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h3>GNOME + ciemny motyw</h3>
+          <p>Czysty pulpit Wayland z własnym brandingiem BoobsOS. Nowoczesny, gotowy do pracy. Bez rozpraszaczy, z Flatpak i Flathub po wyjęciu z pudełka.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CO JEST Z PUDEŁKA ========== -->
+  <section class="section section--alt" id="toolbox" aria-labelledby="toolbox-title">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Included</span>
+        <h2 id="toolbox-title" class="section-title">Co jest z pudełka?</h2>
+        <p class="section-sub">Realny toolchain — nie lista życzeń. Każde narzędzie jest zainstalowane i gotowe.</p>
+      </div>
+      <div class="toolbox-grid">
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <h3>Kontenery</h3>
+          </div>
+          <ul>
+            <li>Docker CE + Compose</li>
+            <li>Podman</li>
+            <li>Buildah</li>
+            <li>Skopeo</li>
+            <li>Distrobox</li>
+            <li>Toolbox</li>
+          </ul>
+        </div>
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            <h3>Kubernetes</h3>
+          </div>
+          <ul>
+            <li>kubectl</li>
+            <li>Helm</li>
+            <li>k9s</li>
+            <li>kubectx / kubens</li>
+            <li>Kustomize</li>
+            <li>stern, kind</li>
+          </ul>
+        </div>
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <h3>IaC / Automatyzacja</h3>
+          </div>
+          <ul>
+            <li>Terraform</li>
+            <li>OpenTofu</li>
+            <li>Ansible</li>
+          </ul>
+        </div>
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>
+            <h3>Chmura</h3>
+          </div>
+          <ul>
+            <li>AWS CLI v2</li>
+            <li>Azure CLI (az)</li>
+            <li>Google Cloud CLI (gcloud)</li>
+          </ul>
+        </div>
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <h3>Sekrety / Krypto</h3>
+          </div>
+          <ul>
+            <li>HashiCorp Vault</li>
+            <li>SOPS</li>
+            <li>age + age-plugin-yubikey</li>
+            <li>GnuPG</li>
+            <li>pass</li>
+          </ul>
+        </div>
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+            <h3>Git i Hosting</h3>
+          </div>
+          <ul>
+            <li>git + git-lfs</li>
+            <li>GitHub CLI (gh)</li>
+            <li>GitLab CLI (glab)</li>
+            <li>lazygit</li>
+          </ul>
+        </div>
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            <h3>Shell / Terminal</h3>
+          </div>
+          <ul>
+            <li>zsh</li>
+            <li>tmux</li>
+            <li>Starship (prompt)</li>
+            <li>fastfetch</li>
+          </ul>
+        </div>
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <h3>CLI UX</h3>
+          </div>
+          <ul>
+            <li>neovim, fzf, ripgrep</li>
+            <li>bat, eza, fd, zoxide</li>
+            <li>jq, yq, git-delta</li>
+            <li>direnv, htop, btop</li>
+            <li>ncdu, tree</li>
+          </ul>
+        </div>
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <h3>Build / Języki</h3>
+          </div>
+          <ul>
+            <li>gcc / make (dev-tools)</li>
+            <li>Go</li>
+            <li>Python 3</li>
+            <li>mise (node/ruby/…)</li>
+          </ul>
+        </div>
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+            <h3>Sieć</h3>
+          </div>
+          <ul>
+            <li>nmap, tcpdump, mtr</li>
+            <li>tshark (wireshark-cli)</li>
+            <li>httpie, socat, iperf3</li>
+            <li>wireguard-tools</li>
+            <li>dig, whois, traceroute</li>
+          </ul>
+        </div>
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <h3>GUI / Aplikacje</h3>
+          </div>
+          <ul>
+            <li>Flathub włączony</li>
+            <li>VSCode (flatpak)</li>
+            <li>Przeglądarki (flatpak)</li>
+            <li>GNOME Software</li>
+          </ul>
+        </div>
+
+        <div class="tool-category">
+          <div class="tool-category-header">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <h3>Środowisko</h3>
+          </div>
+          <ul>
+            <li>GNOME (Wayland)</li>
+            <li>Ciemny motyw domyślnie</li>
+            <li>Branding BoobsOS</li>
+            <li>Homebrew (CLI)</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== JAK TO DZIAŁA ========== -->
+  <section class="section" id="how" aria-labelledby="how-title">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Architektura</span>
+        <h2 id="how-title" class="section-title">Jak to działa?</h2>
+        <p class="section-sub">BoobsOS to wersjonowany obraz OCI budowany na bazie Fedora bootc.</p>
+      </div>
+
+      <div class="flow-diagram" aria-label="Diagram przepływu budowania BoobsOS">
+        <div class="flow-step">
+          <div class="flow-step-icon">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/></svg>
+          </div>
+          <div class="flow-step-text">
+            <strong>Fedora bootc</strong>
+            <span>baza systemu</span>
+          </div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true">→</div>
+        <div class="flow-step">
+          <div class="flow-step-icon">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="flow-step-text">
+            <strong>Containerfile</strong>
+            <span>warstwa BoobsOS</span>
+          </div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true">→</div>
+        <div class="flow-step">
+          <div class="flow-step-icon">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="flow-step-text">
+            <strong>Build w CI</strong>
+            <span>GitHub Actions</span>
+          </div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true">→</div>
+        <div class="flow-step">
+          <div class="flow-step-icon">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>
+          </div>
+          <div class="flow-step-text">
+            <strong>Obraz OCI</strong>
+            <span>ghcr.io / rejestr</span>
+          </div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true">→</div>
+        <div class="flow-step flow-step--highlight">
+          <div class="flow-step-icon">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <div class="flow-step-text">
+            <strong>Twój desktop</strong>
+            <span>upgrade / rollback</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="how-cards">
+        <div class="how-card">
+          <h3>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Aktualizacje atomowe
+          </h3>
+          <p>Zamiast aktualizować setki pakietów osobno, pobierasz nowy obraz całego systemu. Albo wszystko przechodzi poprawnie — albo system pozostaje niezmieniony. Żadnych połowicznych stanów.</p>
+        </div>
+        <div class="how-card">
+          <h3>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+            Rollback jednym poleceniem
+          </h3>
+          <p>Coś poszło nie tak? <code>sudo bootc rollback</code> i po restarcie jesteś z powrotem na poprzedniej wersji. Bez przeszukiwania logów, bez stresu.</p>
+        </div>
+        <div class="how-card">
+          <h3>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+            Rebase z Fedory Atomic
+          </h3>
+          <p>Masz już Fedorę Silverblue, Kinoite lub Bazzite? Przejdź na BoobsOS bez reinstalacji — jednym poleceniem <code>bootc switch</code>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== INSTALACJA ========== -->
+  <section class="section section--alt" id="install" aria-labelledby="install-title">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Get started</span>
+        <h2 id="install-title" class="section-title">Instalacja</h2>
+        <p class="section-sub">Trzy ścieżki — wybierz swoją.</p>
+      </div>
+
+      <div class="install-paths">
+
+        <div class="install-path">
+          <div class="install-path-header">
+            <span class="install-path-num">1</span>
+            <div>
+              <h3>Rebase z Fedory Atomic</h3>
+              <p>Masz Fedorę Silverblue / Kinoite / Bazzite? To najszybsza droga.</p>
+            </div>
+          </div>
+          <div class="terminal">
+            <div class="terminal-bar" aria-hidden="true">
+              <span class="terminal-dot terminal-dot--red"></span>
+              <span class="terminal-dot terminal-dot--yellow"></span>
+              <span class="terminal-dot terminal-dot--green"></span>
+              <span class="terminal-title">terminal</span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span>
+                <code>sudo bootc switch ghcr.io/filip-zienowicz/boobsos:latest</code>
+              </div>
+              <div class="terminal-line terminal-comment"># po restarcie — jesteś na BoobsOS</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="install-path">
+          <div class="install-path-header">
+            <span class="install-path-num">2</span>
+            <div>
+              <h3>Instalacja od zera (ISO)</h3>
+              <p>Pobierz ISO i zainstaluj jak każdy system przez instalator Anaconda.</p>
+            </div>
+          </div>
+          <div class="terminal">
+            <div class="terminal-bar" aria-hidden="true">
+              <span class="terminal-dot terminal-dot--red"></span>
+              <span class="terminal-dot terminal-dot--yellow"></span>
+              <span class="terminal-dot terminal-dot--green"></span>
+              <span class="terminal-title">terminal</span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line terminal-comment"># ISO instalator — wkrótce dostępny</div>
+              <div class="terminal-line terminal-comment"># Śledź repo GitHub żeby nie przegapić</div>
+            </div>
+          </div>
+          <div class="install-badge">Wkrótce</div>
+        </div>
+
+        <div class="install-path">
+          <div class="install-path-header">
+            <span class="install-path-num">3</span>
+            <div>
+              <h3>Aktualizacja i rollback</h3>
+              <p>Kiedy już masz BoobsOS — trzymaj system aktualny.</p>
+            </div>
+          </div>
+          <div class="terminal">
+            <div class="terminal-bar" aria-hidden="true">
+              <span class="terminal-dot terminal-dot--red"></span>
+              <span class="terminal-dot terminal-dot--yellow"></span>
+              <span class="terminal-dot terminal-dot--green"></span>
+              <span class="terminal-title">terminal</span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span>
+                <code>sudo bootc upgrade</code>
+              </div>
+              <div class="terminal-line terminal-comment"># cofnij do poprzedniej wersji</div>
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span>
+                <code>sudo bootc rollback</code>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="install-note">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Obraz <code>ghcr.io/filip-zienowicz/boobsos:latest</code> jest publiczny — nie potrzebujesz logowania, żeby go pobrać.
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FAQ ========== -->
+  <section class="section" id="faq" aria-labelledby="faq-title">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">FAQ</span>
+        <h2 id="faq-title" class="section-title">Często zadawane pytania</h2>
+      </div>
+
+      <div class="faq-list">
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="faq-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+            Czym różni się od zwykłej Fedory?
+          </summary>
+          <div class="faq-answer">
+            <p>Zwykła Fedora to baza — instalujesz ją, a potem spędzasz godziny na dostawianiu narzędzi. BoobsOS to opinionated setup: preinstalowany toolchain DevOps, atomowy model bootc (zamiast tradycyjnego rpm-ostree/dnf), własny branding i możliwość rollbacku całego systemu jednym poleceniem.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="faq-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+            Czy mogę instalować własne pakiety?
+          </summary>
+          <div class="faq-answer">
+            <p>Tak, na kilka sposobów:</p>
+            <ul>
+              <li><strong>Flatpak</strong> — aplikacje GUI przez Flathub (włączony domyślnie)</li>
+              <li><strong>Homebrew</strong> — narzędzia CLI w przestrzeni użytkownika</li>
+              <li><strong>Distrobox / Toolbox</strong> — izolowane kontenery z dowolną dystrybucją</li>
+              <li><strong>rpm-ostree</strong> — warstwy na systemie (dla zaawansowanych)</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="faq-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+            Czy stracę dane przy aktualizacji lub rollbacku?
+          </summary>
+          <div class="faq-answer">
+            <p>Nie. Katalog domowy (<code>/home</code>) jest trwały i oddzielony od obrazu systemu. Aktualizacje i rollback dotyczą tylko warstwy systemowej — Twoje pliki, ustawienia i dane są bezpieczne.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="faq-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+            Na jakim sprzęcie działa?
+          </summary>
+          <div class="faq-answer">
+            <p>Aktualnie <strong>x86_64</strong>. Wsparcie dla <strong>aarch64</strong> (ARM) jest planowane. Wymagania sprzętowe są takie same jak dla Fedory — praktycznie każdy współczesny komputer.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="faq-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+            Czy to oficjalny produkt Fedory lub Red Hata?
+          </summary>
+          <div class="faq-answer">
+            <p>Nie — BoobsOS to niezależna dystrybucja zbudowana <em>na bazie</em> Fedory (model Universal Blue). Nie jest afiliowana z Fedorą Project, Red Hatem ani IBM. To projekt open-source dostępny na GitHub.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="faq-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+            Co to w ogóle za nazwa?
+          </summary>
+          <div class="faq-answer">
+            <p>Przymrużenie oka — bo dlaczego nie? Produkt jest poważny, nazwa nie musi być. Jeśli to nie Twój klimat, sam Containerfile jest dostępny i możesz zbudować własną dystrybucję pod swoją nazwą.</p>
+          </div>
+        </details>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="assets/boobsos-logo.png" alt="Logo BoobsOS" width="28" height="28" />
+        <span>BoobsOS</span>
+      </div>
+      <p class="footer-sub">
+        Zbudowany na
+        <a href="https://fedoraproject.org" target="_blank" rel="noopener">Fedorze</a>
+        i
+        <a href="https://containers.github.io/bootc/" target="_blank" rel="noopener">bootc</a>.
+        Licencja: MIT.
+      </p>
+      <nav aria-label="Linki stopki">
+        <ul class="footer-links">
+          <li><a href="https://github.com/filip-zienowicz/boobsos" target="_blank" rel="noopener">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+            GitHub
+          </a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 BoobsOS. Projekt open-source, niezależny od Fedora Project / Red Hat.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
