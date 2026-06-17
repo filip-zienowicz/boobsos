@@ -1,0 +1,64 @@
+[Plymouth Theme]
+Name=BoobsOS
+Description=BoobsOS Game boot splash — czerwony gradient marki z logo i paskiem postępu
+ModuleName=two-step
+
+[two-step]
+Font=Cantarell 12
+TitleFont=Cantarell Light 30
+# Katalog z animacja — korzystamy z animacji z motywu spinner
+ImageDir=/usr/share/plymouth/themes/spinner
+HorizontalAlignment=.5
+VerticalAlignment=.5
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.5
+DialogHorizontalAlignment=.5
+DialogVerticalAlignment=.7
+TitleHorizontalAlignment=.5
+TitleVerticalAlignment=.65
+Transition=none
+TransitionDuration=0.0
+# Tlo — ciemny bordo/czern (marka BoobsOS Game)
+BackgroundStartColor=0x1A0505
+BackgroundEndColor=0x2D0808
+# Pasek postepu — czerwony akcent Game: #DC2626, tlo ciemne
+ProgressBarBackgroundColor=0x3D0A0A
+ProgressBarForegroundColor=0xDC2626
+MessageBelowAnimation=true
+
+[boot-up]
+UseEndAnimation=false
+
+[shutdown]
+UseEndAnimation=false
+
+[reboot]
+UseEndAnimation=false
+
+[updates]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Aktualizowanie systemu...
+SubTitle=Nie wylaczaj komputera
+
+[system-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Aktualizacja BoobsOS...
+SubTitle=Nie wylaczaj komputera
+
+[firmware-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Aktualizacja firmware...
+SubTitle=Nie wylaczaj komputera
+
+[system-reset]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Reset systemu...
+SubTitle=Nie wylaczaj komputera

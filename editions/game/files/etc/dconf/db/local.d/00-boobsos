@@ -7,8 +7,8 @@
 # Ciemny motyw — domyślny dla BoobsOS
 color-scheme='prefer-dark'
 gtk-theme='Adwaita-dark'
-# Akcent niebieski — wspierany od GNOME 47+ (Fedora 41+)
-accent-color='blue'
+# Akcent czerwony — motyw Game (wspierany od GNOME 47+ / Fedora 41+)
+accent-color='red'
 
 [org/gnome/desktop/background]
 # Tapeta pulpitu — gradient marki BoobsOS

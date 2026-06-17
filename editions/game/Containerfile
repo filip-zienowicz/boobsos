@@ -77,8 +77,9 @@ RUN sed -i \
 RUN grep -q '^VARIANT_ID=' /usr/lib/os-release \
         && sed -i 's|^VARIANT_ID=.*|VARIANT_ID=game|' /usr/lib/os-release \
         || echo 'VARIANT_ID=game' >> /usr/lib/os-release
-RUN grep -q '^ANSI_COLOR=' /usr/lib/os-release \
-        || echo 'ANSI_COLOR="38;2;37;99;235"' >> /usr/lib/os-release
+RUN sed -i 's|^ANSI_COLOR=.*|ANSI_COLOR="38;2;220;38;38"|' /usr/lib/os-release \
+    && grep -q '^ANSI_COLOR=' /usr/lib/os-release \
+        || echo 'ANSI_COLOR="38;2;220;38;38"' >> /usr/lib/os-release
 RUN grep -q '^LOGO=' /usr/lib/os-release \
         || echo 'LOGO=boobsos' >> /usr/lib/os-release
 RUN grep -E '^(NAME|PRETTY_NAME|ID|VARIANT|VARIANT_ID)' /usr/lib/os-release \
