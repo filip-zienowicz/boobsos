@@ -1,0 +1,20 @@
+# bib anaconda-iso — wariant UNATTENDED (auto-instalacja, bez klikania).
+# Używany do testu instalacji na ms01: kickstart auto-partycjonuje i restartuje.
+# Konto: boobs/boobs (wheel). System instaluje obraz bootc (origin z ref podanego bib).
+
+[[customizations.user]]
+name = "boobs"
+password = "boobs"
+groups = ["wheel"]
+
+[customizations.installer.kickstart]
+contents = """
+text
+lang en_US.UTF-8
+keyboard us
+timezone Etc/UTC --utc
+clearpart --all --initlabel --disklabel=gpt
+autopart --type=plain --noswap
+rootpw --lock
+reboot
+"""

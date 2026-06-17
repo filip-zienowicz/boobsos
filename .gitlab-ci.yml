@@ -101,6 +101,9 @@ build-iso:
   script:
     - echo "==> Generuję ISO z ${IMAGE_LATEST}"
     - mkdir -p "$(pwd)/output"
+    # Obraz ma os-release ID=boobsos VERSION_ID=44 → bib szuka defs/boobsos-44.yaml.
+    # Brak wbudowanego → wstrzykujemy nasz (treść == fedora-40.yaml: pakiety instalatora).
+    - install -m0644 iso/defs/boobsos-44.yaml /usr/share/bootc-image-builder/defs/boobsos-44.yaml
     - |
       bootc-image-builder \
         --type anaconda-iso \

@@ -29,6 +29,11 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OUTPUT_DIR="${REPO_ROOT}/iso-output"
 CONFIG_FILE="${SCRIPT_DIR}/config.toml"
 
+# Definicja dystrybucji dla bib. Obraz ma os-release ID=boobsos VERSION_ID=44,
+# więc bib szuka defs/boobsos-44.yaml (którego nie ma wbudowanego → montujemy nasz).
+# Treść == fedora-40.yaml z bib (lista pakietów instalatora anaconda-iso).
+DEFS_FILE="${SCRIPT_DIR}/defs/boobsos-44.yaml"
+
 BIB_IMAGE="quay.io/centos-bootc/bootc-image-builder:latest"
 
 echo "==> BoobsOS ISO Builder"
@@ -55,6 +60,7 @@ sudo podman run \
     --privileged \
     --security-opt label=type:unconfined_t \
     -v "${CONFIG_FILE}:/config.toml:ro" \
+    -v "${DEFS_FILE}:/usr/share/bootc-image-builder/defs/boobsos-44.yaml:ro" \
     -v "${OUTPUT_DIR}:/output" \
     -v /var/lib/containers/storage:/var/lib/containers/storage \
     "${BIB_IMAGE}" \
