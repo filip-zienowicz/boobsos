@@ -82,6 +82,15 @@ jobs:
 
       - name: Push do rejestru (${{ matrix.variant }})
         run: |
-          podman push "${{ matrix.image_name }}:latest"
-          podman push "${{ matrix.image_name }}:${GITHUB_SHA::7}"
+          # ghcr bywa flaky przy dużych warstwach (HTTP 500) — retry z backoffem.
+          push_retry() {
+            for i in 1 2 3 4 5; do
+              podman push "$1" && return 0
+              echo "::warning::push $1 nieudany (próba $i/5) — ponawiam za $((i*15))s"
+              sleep $((i*15))
+            done
+            return 1
+          }
+          push_retry "${{ matrix.image_name }}:${GITHUB_SHA::7}"
+          push_retry "${{ matrix.image_name }}:latest"
           echo "Opublikowano: ${{ matrix.image_name }}:latest (SHA: ${GITHUB_SHA::7})"
