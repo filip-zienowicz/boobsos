@@ -6,9 +6,9 @@ BoobsOS jest oparty na modelu **image-based** (bootc/OCI). Wszystkie składniki 
 
 | Składnik | Źródło | Uwagi |
 |----------|--------|-------|
-| Obrazy OCI (system) | `registry.gitlab.cycr.us/fzienowicz/boobsos` | Rejestr self-hosted GitLab |
-| Obraz edycji Game | `registry.gitlab.cycr.us/fzienowicz/boobsos/game` | |
-| Obraz edycji Game (NVIDIA) | `registry.gitlab.cycr.us/fzienowicz/boobsos/game-nvidia` | |
+| Obrazy OCI (system) | `gitlab.cycr.us:5050/fzienowicz/boobsos` | Rejestr self-hosted GitLab |
+| Obraz edycji Game | `gitlab.cycr.us:5050/fzienowicz/boobsos/game` | |
+| Obraz edycji Game (NVIDIA) | `gitlab.cycr.us:5050/fzienowicz/boobsos/game-nvidia` | |
 | Pakiety RPM | `repo.cycx.io/fedora/$releasever/$basearch/` | Skonfigurowane przez `cycrus.repo` |
 
 ---
@@ -19,7 +19,7 @@ BoobsOS jest oparty na modelu **image-based** (bootc/OCI). Wszystkie składniki 
 
 W każdym obrazie BoobsOS włączony jest `bootc-fetch-apply-updates.timer` (usługa systemd). Timer działa w tle:
 
-1. Regularnie sprawdza, czy w rejestrze (`registry.gitlab.cycr.us`) dostępny jest nowy obraz.
+1. Regularnie sprawdza, czy w rejestrze (`gitlab.cycr.us:5050`) dostępny jest nowy obraz.
 2. Jeśli tak — pobiera go i przygotowuje do zastosowania.
 3. Przy następnym **restarcie systemu** nowy obraz zostaje aktywowany atomowo.
 
@@ -30,9 +30,9 @@ Nie jest wymagana żadna akcja ze strony użytkownika. Aktualizacje są atomowe 
 Przy instalacji BoobsOS (z ISO lub przez `bootc switch`) origin systemu ustawiany jest na odpowiedni obraz w naszym rejestrze:
 
 ```
-registry.gitlab.cycr.us/fzienowicz/boobsos:latest          # edycja DevOps
-registry.gitlab.cycr.us/fzienowicz/boobsos/game:latest     # edycja Game
-registry.gitlab.cycr.us/fzienowicz/boobsos/game-nvidia:latest  # edycja Game + NVIDIA
+gitlab.cycr.us:5050/fzienowicz/boobsos:latest          # edycja DevOps
+gitlab.cycr.us:5050/fzienowicz/boobsos/game:latest     # edycja Game
+gitlab.cycr.us:5050/fzienowicz/boobsos/game-nvidia:latest  # edycja Game + NVIDIA
 ```
 
 Timer i `bootc upgrade` zawsze operują względem tego originu — nie ma możliwości przypadkowego pobrania obrazu z zewnętrznego rejestru.
@@ -86,7 +86,7 @@ Polecenie `boobsos-edition switch` wykonuje `bootc switch` do odpowiedniego obra
 
 ## CA — zaufanie do rejestru
 
-Rejestr `registry.gitlab.cycr.us` korzysta z certyfikatu TLS wystawionego przez **SSL2BUY EMEA RSA Domain Validation Secure Server CA** (pośredni CA) oraz root **Sectigo Public Server Authentication Root R46**.
+Rejestr `gitlab.cycr.us:5050` korzysta z certyfikatu TLS wystawionego przez **SSL2BUY EMEA RSA Domain Validation Secure Server CA** (pośredni CA) oraz root **Sectigo Public Server Authentication Root R46**.
 
 Root Sectigo R46 jest stosunkowo nowy (2021) i może nie być obecny w starszych wersjach bundla `ca-certificates`. Dlatego oba certyfikaty CA (pośredni + root) są dołączone bezpośrednio do obrazu BoobsOS jako anchor:
 
@@ -115,7 +115,7 @@ Repozytorium skonfigurowane jest przez plik `files/etc/yum.repos.d/cycrus.repo` 
 Każdy merge/push do brancha `main` w repozytorium `gitlab.cycr.us/fzienowicz/boobsos` uruchamia pipeline CI GitLab, który:
 
 1. Buduje obraz OCI na podstawie `Containerfile`.
-2. Pushuje nowy obraz do rejestru `registry.gitlab.cycr.us` z tagami `:latest` i SHA commita.
+2. Pushuje nowy obraz do rejestru `gitlab.cycr.us:5050` z tagami `:latest` i SHA commita.
 3. Timer na urządzeniach użytkowników wykrywa nowy digest i pobiera aktualizację.
 
 Buildy planowane (scheduled) uruchamiane są o `05:00 UTC` (edycja DevOps) i `05:30 UTC` (edycje Game), co zapewnia regularne aktualizacje bazowych warstw (upstream UBlue/Fedora).
@@ -125,7 +125,7 @@ Buildy planowane (scheduled) uruchamiane są o `05:00 UTC` (edycja DevOps) i `05
 ## Podsumowanie
 
 ```
-Urządzenie → bootc timer → registry.gitlab.cycr.us (nasz rejestr) → nowy obraz
+Urządzenie → bootc timer → gitlab.cycr.us:5050 (nasz rejestr) → nowy obraz
                                       ↑
                               CI GitLab (gitlab.cycr.us)
                               buduje z Containerfile

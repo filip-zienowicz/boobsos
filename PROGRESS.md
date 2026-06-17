@@ -275,10 +275,10 @@ Pakiety do zweryfikowania przed buildem (mogą nie istnieć pod podaną nazwą):
 
 ### Model docelowy
 
-- **Obrazy OCI** hostowane w self-hosted GitLab: `registry.gitlab.cycr.us/fzienowicz/boobsos` (DevOps), `/game` (Game), `/game-nvidia` (Game+NVIDIA). Origin ustawiany przy instalacji z ISO lub przez `bootc switch`.
+- **Obrazy OCI** hostowane w self-hosted GitLab: `gitlab.cycr.us:5050/fzienowicz/boobsos` (DevOps), `/game` (Game), `/game-nvidia` (Game+NVIDIA). Origin ustawiany przy instalacji z ISO lub przez `bootc switch`.
 - **Auto-update:** `bootc-fetch-apply-updates.timer` włączony w obrazach — cyklicznie pobiera nowy digest z naszego rejestru i stosuje atomowo przy restarcie. Bez żadnej akcji użytkownika.
 - **Pakiety RPM:** `repo.cycx.io/fedora/$releasever/$basearch/` — wpięte przez `cycrus.repo` w obrazie.
-- **CI:** każdy push do `main` na gitlab.cycr.us uruchamia pipeline → push do registry.gitlab.cycr.us. Scheduled: 05:00 UTC (DevOps) / 05:30 UTC (Game).
+- **CI:** każdy push do `main` na gitlab.cycr.us uruchamia pipeline → push do gitlab.cycr.us:5050. Scheduled: 05:00 UTC (DevOps) / 05:30 UTC (Game).
 
 ### CA wpięte do obrazu
 
