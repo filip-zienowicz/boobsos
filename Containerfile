@@ -12,6 +12,10 @@ FROM ghcr.io/ublue-os/silverblue-main:latest
 # ---------------------------------------------------------------------------
 COPY files/ /
 
+# Aktywuj zaufane CA (registry.gitlab.cycr.us + repo.cycx.io) z anchora
+# files/etc/pki/ca-trust/source/anchors/cycr-us-ca.crt
+RUN update-ca-trust 2>/dev/null || true
+
 # ---------------------------------------------------------------------------
 # REBRANDING os-release
 #
@@ -741,6 +745,183 @@ RUN dconf update \
 # jednorazowy dialog przez dconf: org/gnome/shell welcome-dialog-last-shown-version
 # (patrz files/etc/dconf/db/local.d/00-boobsos). gnome-tour zostaje bez zmian.
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# F2.16: Rozszerzony toolchain DevOps/SRE/security — pakiety RPM
+#
+# Wszystkie zweryfikowane w Fedora 44 (dnf list w kontenerze bazy):
+#
+#   ansible-lint (python3-ansible-lint):
+#     Statyczny linter playbooków Ansible — niezbędny przy CI/CD dla IaC.
+#     Pakiet RPM = python3-ansible-lint (v26.4), dostarcza /usr/bin/ansible-lint.
+#
+#   yamllint:
+#     Linter YAML — wymagany przy Ansible, Kubernetes manifests, Helm values.
+#     Dostępny jako 'yamllint' (v1.38) w Fedora repo.
+#
+#   ShellCheck:
+#     Statyczna analiza skryptów bash/sh — łapie typowe błędy. Fedora repo
+#     (pakiet: ShellCheck — uwaga wielka litera, v0.11.0).
+#
+#   jc:
+#     Konwertuje output CLI (ls, ps, dig, netstat…) na JSON — przydatny w
+#     skryptach i pipeline'ach DevOps. Fedora repo (v1.25.6).
+#
+#   postgresql (klient psql):
+#     Klient SQL dla PostgreSQL (psql, pg_dump…). W Fedora: pakiet 'postgresql'
+#     to jest właśnie klient (v18). Niezbędny SRE — debugowanie DB.
+#
+#   mariadb (klient mysql):
+#     Klient SQL kompatybilny z MySQL i MariaDB (mysql, mariadb, mysqldump).
+#     Fedora repo: pakiet 'mariadb' (v11.8) — sam klient bez serwera.
+#
+#   valkey (redis-cli replacement):
+#     Redis był usunięty z Fedora; valkey to oficjalny fork (v9.0) — dostarcza
+#     'valkey-cli' (w pełni kompatybilny z redis-cli). SRE: debug cache/kolejki.
+#
+#   packer:
+#     HashiCorp Packer — budowanie obrazów maszyn (AMI, Vagrant, QEMU…).
+#     Dostępny z hashicorp.repo (pre-configured w files/ overlay) v1.15.
+#
+# Dry-run zweryfikowany w kontenerze bazy (silverblue-main:latest):
+#   yamllint 1.38.0, ShellCheck 0.11.0, jc 1.25.6, postgresql 18.3,
+#   mariadb 11.8.6, valkey 9.0.4, python3-ansible-lint 26.4.0 — wszystkie OK.
+#   packer: dostępny przez hashicorp.repo (wbudowany w overlay).
+# ---------------------------------------------------------------------------
+RUN dnf install -y \
+    # --- Linting i analiza kodu ---
+    # Linter playbooków Ansible (python3-ansible-lint → /usr/bin/ansible-lint)
+    python3-ansible-lint \
+    # Linter YAML — manifesty K8s, Helm values, Ansible playbooks
+    yamllint \
+    # Statyczna analiza skryptów bash/sh (uwaga: pakiet to 'ShellCheck')
+    ShellCheck \
+    # Konwersja output CLI → JSON (jq-friendly pipeline)
+    jc \
+    # --- Klienty baz danych (SRE: debug i migracje) ---
+    # Klient PostgreSQL (psql, pg_dump, pg_restore) — wersja 18
+    postgresql \
+    # Klient MySQL/MariaDB (mysql, mariadb, mysqldump) — bez serwera
+    mariadb \
+    # valkey-cli (drop-in replacement dla redis-cli; Redis usunięty z Fedora)
+    valkey \
+    # --- IaC — HashiCorp Packer (hashicorp.repo, pre-skonfigurowane w overlay) ---
+    packer \
+    && dnf clean all
+
+# ---------------------------------------------------------------------------
+# F2.17: Rozszerzony toolchain DevOps/SRE/security — binarki z GitHub releases
+#
+# Instalowane do /usr/bin (NIE /usr/local/bin — w bootc to symlink do /var).
+# Wersje pinowane; ARCH wykrywany runtime (amd64/arm64).
+# Wszystkie URLe zweryfikowane curl -fsIL → HTTP 200.
+#
+# Narzędzia:
+#   kubeseal (v0.29.0)   — CLI dla Bitnami Sealed Secrets; szyfruje Secrets K8s
+#                          kluczem klaster-publicznym → bezpieczne repo GitOps.
+#   helmfile (v1.5.5)    — Deklaratywne zarządzanie wieloma Helm chart'ami naraz;
+#                          odpowiednik docker-compose dla K8s.
+#   k3d (v5.8.3)         — Lokalny klaster K3s w Dockerze; szybszy niż kind dla dev.
+#   argocd (v2.14.4)     — CLI ArgoCD; GitOps controller dla K8s. Binarka bez dep.
+#   flux (v2.5.1)        — CLI FluxCD; GitOps alternatywa dla ArgoCD.
+#   cosign (v2.5.0)      — Podpisywanie i weryfikacja obrazów OCI (supply-chain sec).
+#   trivy (v0.70.0)      — Skaner podatności obrazów/FS/IaC (Aqua Security).
+#   syft (v1.26.1)       — Generowanie SBOM (Software Bill of Materials) z obrazów OCI.
+#   grype (v0.90.0)      — Skaner podatności na podstawie SBOM (Anchore); para z syft.
+#   terraform-docs       — Generowanie README.md z modułów Terraform (v0.20.0).
+#   tflint (v0.63.0)     — Linter Terraform; łapie błędy przed planem/apply.
+#   terragrunt (v1.0.8)  — DRY wrapper dla Terraform; zarządza stanem i modułami.
+#   dive (v0.13.0)       — Interaktywna analiza warstw obrazu Docker (rozmiar, diff).
+#   ctop (v0.7.7)        — top/htop dla kontenerów Docker — metryki w terminalu.
+#   lazydocker (v0.23.3) — TUI dla Dockera (kontenery, obrazy, logi) — jak lazygit.
+#
+# Uwaga: trivy arm64 = Linux-ARM64 (nie arm64), amd64 = Linux-64bit.
+# ---------------------------------------------------------------------------
+RUN KUBESEAL_VERSION="0.29.0" \
+    && HELMFILE_VERSION="1.5.5" \
+    && K3D_VERSION="5.8.3" \
+    && ARGOCD_VERSION="2.14.4" \
+    && FLUX_VERSION="2.5.1" \
+    && COSIGN_VERSION="2.5.0" \
+    && TRIVY_VERSION="0.70.0" \
+    && SYFT_VERSION="1.26.1" \
+    && GRYPE_VERSION="0.90.0" \
+    && TFDOCS_VERSION="0.20.0" \
+    && TFLINT_VERSION="0.63.0" \
+    && TERRAGRUNT_VERSION="1.0.8" \
+    && DIVE_VERSION="0.13.0" \
+    && CTOP_VERSION="0.7.7" \
+    && LAZYDOCKER_VERSION="0.23.3" \
+    && ARCH="$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')" \
+    && TRIVY_ARCH="$(uname -m | sed 's/x86_64/64bit/;s/aarch64/ARM64/')" \
+    # --- kubeseal — sealed-secrets CLI (tarball) ---
+    && curl -fsSL "https://github.com/bitnami-labs/sealed-secrets/releases/download/v${KUBESEAL_VERSION}/kubeseal-${KUBESEAL_VERSION}-linux-${ARCH}.tar.gz" \
+       | tar -xzf - -C /usr/bin kubeseal \
+    && chmod +x /usr/bin/kubeseal \
+    # --- helmfile — deklaratywne zarządzanie Helm (tarball) ---
+    && curl -fsSL "https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}/helmfile_${HELMFILE_VERSION}_linux_${ARCH}.tar.gz" \
+       | tar -xzf - -C /usr/bin helmfile \
+    && chmod +x /usr/bin/helmfile \
+    # --- k3d — lokalny klaster K3s w Dockerze (binarka) ---
+    && curl -fsSL "https://github.com/k3d-io/k3d/releases/download/v${K3D_VERSION}/k3d-linux-${ARCH}" \
+       -o /usr/bin/k3d \
+    && chmod +x /usr/bin/k3d \
+    # --- argocd CLI — GitOps controller (binarka) ---
+    && curl -fsSL "https://github.com/argoproj/argo-cd/releases/download/v${ARGOCD_VERSION}/argocd-linux-${ARCH}" \
+       -o /usr/bin/argocd \
+    && chmod +x /usr/bin/argocd \
+    # --- flux CLI — FluxCD GitOps (tarball) ---
+    && curl -fsSL "https://github.com/fluxcd/flux2/releases/download/v${FLUX_VERSION}/flux_${FLUX_VERSION}_linux_${ARCH}.tar.gz" \
+       | tar -xzf - -C /usr/bin flux \
+    && chmod +x /usr/bin/flux \
+    # --- cosign — podpisywanie obrazów OCI / supply-chain (binarka) ---
+    && curl -fsSL "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-${ARCH}" \
+       -o /usr/bin/cosign \
+    && chmod +x /usr/bin/cosign \
+    # --- trivy — skaner podatności obrazów/FS/IaC (tarball) ---
+    # Uwaga: trivy używa niestandardowych nazw arch: 64bit / ARM64
+    && curl -fsSL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-${TRIVY_ARCH}.tar.gz" \
+       | tar -xzf - -C /usr/bin trivy \
+    && chmod +x /usr/bin/trivy \
+    # --- syft — generowanie SBOM z obrazów OCI (tarball) ---
+    && curl -fsSL "https://github.com/anchore/syft/releases/download/v${SYFT_VERSION}/syft_${SYFT_VERSION}_linux_${ARCH}.tar.gz" \
+       | tar -xzf - -C /usr/bin syft \
+    && chmod +x /usr/bin/syft \
+    # --- grype — skaner podatności na bazie SBOM (tarball) ---
+    && curl -fsSL "https://github.com/anchore/grype/releases/download/v${GRYPE_VERSION}/grype_${GRYPE_VERSION}_linux_${ARCH}.tar.gz" \
+       | tar -xzf - -C /usr/bin grype \
+    && chmod +x /usr/bin/grype \
+    # --- terraform-docs — dokumentacja modułów Terraform (tarball) ---
+    && curl -fsSL "https://github.com/terraform-docs/terraform-docs/releases/download/v${TFDOCS_VERSION}/terraform-docs-v${TFDOCS_VERSION}-linux-${ARCH}.tar.gz" \
+       | tar -xzf - -C /usr/bin terraform-docs \
+    && chmod +x /usr/bin/terraform-docs \
+    # --- tflint — linter Terraform (zip → unzip do /tmp) ---
+    && curl -fsSL "https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_${ARCH}.zip" \
+       -o /tmp/tflint.zip \
+    && unzip -q /tmp/tflint.zip tflint -d /usr/bin \
+    && chmod +x /usr/bin/tflint \
+    && rm /tmp/tflint.zip \
+    # --- terragrunt — DRY wrapper dla Terraform (binarka) ---
+    && curl -fsSL "https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_${ARCH}" \
+       -o /usr/bin/terragrunt \
+    && chmod +x /usr/bin/terragrunt \
+    # --- dive — analiza warstw obrazu Docker (tarball) ---
+    && curl -fsSL "https://github.com/wagoodman/dive/releases/download/v${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_${ARCH}.tar.gz" \
+       | tar -xzf - -C /usr/bin dive \
+    && chmod +x /usr/bin/dive \
+    # --- ctop — top dla kontenerów Docker (binarka) ---
+    && curl -fsSL "https://github.com/bcicen/ctop/releases/download/v${CTOP_VERSION}/ctop-${CTOP_VERSION}-linux-${ARCH}" \
+       -o /usr/bin/ctop \
+    && chmod +x /usr/bin/ctop \
+    # --- lazydocker — TUI dla Dockera (tarball) ---
+    && curl -fsSL "https://github.com/jesseduffield/lazydocker/releases/download/v${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION}_Linux_x86_64.tar.gz" \
+       -o /tmp/lazydocker_amd64.tar.gz \
+    && curl -fsSL "https://github.com/jesseduffield/lazydocker/releases/download/v${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION}_Linux_arm64.tar.gz" \
+       -o /tmp/lazydocker_arm64.tar.gz \
+    && tar -xzf "/tmp/lazydocker_${ARCH}.tar.gz" -C /usr/bin lazydocker \
+    && chmod +x /usr/bin/lazydocker \
+    && rm /tmp/lazydocker_amd64.tar.gz /tmp/lazydocker_arm64.tar.gz \
+    && echo "F2.17 binarki: kubeseal helmfile k3d argocd flux cosign trivy syft grype terraform-docs tflint terragrunt dive ctop lazydocker — OK"
 
 # ---------------------------------------------------------------------------
 # LINT — obowiązkowy krok dla obrazów bootc

@@ -270,3 +270,33 @@ Pakiety do zweryfikowania przed buildem (mogą nie istnieć pod podaną nazwą):
 - `httpie` — zweryfikować dostępność w Fedora repo
 - `google-cloud-cli` — baseurl el9 x86_64 hardcode; problem na aarch64
 - `age` — zweryfikować dostępność w Fedora repo
+
+## Auto-aktualizacje (nasze zasoby) — ZROBIONE
+
+### Model docelowy
+
+- **Obrazy OCI** hostowane w self-hosted GitLab: `registry.gitlab.cycr.us/fzienowicz/boobsos` (DevOps), `/game` (Game), `/game-nvidia` (Game+NVIDIA). Origin ustawiany przy instalacji z ISO lub przez `bootc switch`.
+- **Auto-update:** `bootc-fetch-apply-updates.timer` włączony w obrazach — cyklicznie pobiera nowy digest z naszego rejestru i stosuje atomowo przy restarcie. Bez żadnej akcji użytkownika.
+- **Pakiety RPM:** `repo.cycx.io/fedora/$releasever/$basearch/` — wpięte przez `cycrus.repo` w obrazie.
+- **CI:** każdy push do `main` na gitlab.cycr.us uruchamia pipeline → push do registry.gitlab.cycr.us. Scheduled: 05:00 UTC (DevOps) / 05:30 UTC (Game).
+
+### CA wpięte do obrazu
+
+- Plik: `files/etc/pki/ca-trust/source/anchors/cycr-us-ca.crt`
+- Łańcuch (publiczny, Sectigo): `*.cycr.us` → SSL2BUY EMEA RSA DV CA → Sectigo Public Server Authentication Root R46
+- Anchor zawiera **dwa certyfikaty CA** (pośredni + root), oba `CA:TRUE` — bez liścia serwera.
+  - Pośredni: `C=AE, O=SSL2BUY EMEA LLC, CN=SSL2BUY EMEA RSA Domain Validation Secure Server CA` (ważny 2024–2034)
+  - Root: `C=GB, O=Sectigo Limited, CN=Sectigo Public Server Authentication Root R46` (ważny 2021–2046, self-signed)
+- Root R46 dołączony jawnie — jest stosunkowo nowy (2021) i może nie być w domyślnym bundlu ca-certificates Fedory/UBlue.
+- `update-ca-trust` wywołuje orkiestrator w Containerfile — tu tylko dostarczamy anchor.
+- Weryfikacja: `openssl crl2pkcs7 -nocrl -certfile <plik> | openssl pkcs7 -print_certs -noout` — oba CA potwierdzone.
+
+### Dokumentacja
+
+- `docs/UPDATES.md` — pełny opis modelu aktualizacji (PL): skąd obrazy, timer, rollback, komendy użytkownika, CA, RPM, CI. Tabela składnik→źródło.
+
+### Uwagi / wątpliwości
+
+- gitlab.cycr.us używa **publicznego CA** (Sectigo/SSL2BUY), NIE prywatnego root CA. Informacja o „prywatnym CA" w briefie może dotyczyć self-signed lub wewnętrznego CA dla innych usług — dla registry TLS chain jest w pełni publiczny.
+- `/usr/local/share/ca-certificates/cycr.us.crt` na hoście fz-vm to cert LIŚCIA (CA:FALSE, `*.cycr.us`) — nie powinien być w anchors; nie kopiujemy go do obrazu.
+- Jeśli Fedora 44 base image już zawiera Sectigo R46 root w swoim bundlu ca-certificates, anchor jest nadmiarowy (ale bezpieczny — idempotentny).

@@ -51,6 +51,9 @@ COPY files/ /
 # ---------------------------------------------------------------------------
 COPY editions/game/files/ /
 
+# Aktywuj zaufane CA (registry.gitlab.cycr.us + repo.cycx.io) z anchora w files/
+RUN update-ca-trust 2>/dev/null || true
+
 # ---------------------------------------------------------------------------
 # G0.1: Rebranding os-release
 #

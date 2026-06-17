@@ -1,0 +1,24 @@
+# bootc-image-builder config for BoobsOS anaconda-iso
+# Użycie: przekazywany jako --config /config.toml do bib
+# Wynik: iso-output/bootiso/install.iso (dodaj iso-output/ do .gitignore)
+#
+# Uwaga: instalowany system będzie używał obrazu OCI jako origin (bootc).
+# Numer wersji i nazwa dystrybucji pobierane z os-release w obrazie OCI
+# (PRETTY_NAME="BoobsOS" — ustawione w Containerfile).
+
+[[customizations.user]]
+name = "boobs"
+password = "boobs"
+groups = ["wheel"]
+
+# rootfs: bib obsługuje ext4 przez flagę --rootfs ext4 (CLI, nie config.toml)
+# Kickstart: brak customizacji — instalator używa domyślnego trybu graficznego
+# Jeśli potrzebny automatyczny install, dodaj:
+# [customizations.installer.kickstart]
+# contents = """
+# text --non-interactive
+# zerombr
+# clearpart --all --initlabel
+# autopart --type=plain --fstype=ext4
+# reboot
+# """
