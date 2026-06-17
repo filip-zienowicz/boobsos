@@ -126,6 +126,29 @@ do GitLab Container Registry przy push na gałąź `main`.
 
 ---
 
+## Edycje
+
+BoobsOS dostępny w dwóch niezależnych wariantach.
+
+| Edycja | Obraz | Baza | Opis |
+|--------|-------|------|------|
+| **Bazowa** | `ghcr.io/filip-zienowicz/boobsos:latest` | ublue silverblue-main | Stack DevOps: Docker, K8s, VS Code, Brave, branding |
+| **Game** | `ghcr.io/filip-zienowicz/boobsos-game:latest` | ublue silverblue-nvidia | Czysto gamingowa: Steam, Lutris, Heroic, MangoHud, Gamescope, Brave, Discord, OBS — **BEZ DevOps**, **sterowniki NVIDIA** |
+
+Edycja Game jest **niezależna** od bazowej — nie dziedziczy stacku DevOps, bazuje bezpośrednio
+na `ghcr.io/ublue-os/silverblue-nvidia:latest` (preinstalowane sterowniki NVIDIA + mesa AMD/Intel).
+
+### Instalacja edycji Game
+
+```bash
+sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game:latest
+```
+
+Po restarcie usługa `boobsos-firstboot-flatpaks` zainstaluje Steam, Lutris, Heroic, ProtonUp-Qt, Discord i OBS Studio.
+Szczegóły: [editions/game/README.md](editions/game/README.md).
+
+---
+
 ## Roadmap
 
 | Faza | Opis | Status |

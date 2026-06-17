@@ -1,0 +1,66 @@
+# BoobsOS Game — systemowe domyślne ustawienia GNOME (dconf keyfile)
+# Nadpisuje /home/fzienowicz/boobsos/files/etc/dconf/db/local.d/00-boobsos z bazy.
+# TYLKO zmiana: favorite-apps — lista gamingowa zamiast DevOps.
+# Reszta kluczy (ciemny motyw, tapeta, dash-to-panel, welcome-dialog off) zachowana.
+
+[org/gnome/desktop/interface]
+# Ciemny motyw — domyślny dla BoobsOS
+color-scheme='prefer-dark'
+gtk-theme='Adwaita-dark'
+# Akcent niebieski — wspierany od GNOME 47+ (Fedora 41+)
+accent-color='blue'
+
+[org/gnome/desktop/background]
+# Tapeta pulpitu — gradient marki BoobsOS
+picture-uri='file:///usr/share/backgrounds/boobsos/boobsos.png'
+picture-uri-dark='file:///usr/share/backgrounds/boobsos/boobsos-dark.png'
+picture-options='zoom'
+
+[org/gnome/desktop/screensaver]
+# Wygaszacz ekranu — ta sama tapeta
+picture-uri='file:///usr/share/backgrounds/boobsos/boobsos.png'
+picture-options='zoom'
+
+[org/gnome/desktop/wm/preferences]
+# Tradycyjny układ przycisków: minimize, maximize, close
+button-layout='appmenu:minimize,maximize,close'
+
+[org/gnome/shell]
+# Wyłącz dialog powitalny GNOME Shell
+welcome-dialog-last-shown-version='99'
+# Włączone rozszerzenia GNOME Shell
+enabled-extensions=['dash-to-panel@jderose9.github.com', 'appindicatorsupport@rgcjonas.gmail.com']
+
+# Pasek zadań (Dash) — przypięte aplikacje GAMINGOWE
+#
+# Zweryfikowane .desktop ID dostępne po instalacji pakietów / flatpaków:
+#   brave-browser.desktop          — Brave Browser (zainstalowany jako RPM w G1)
+#   org.gnome.Nautilus.desktop     — Menedżer plików (GNOME Files; w bazie silverblue)
+#   org.gnome.Settings.desktop     — Ustawienia systemowe (w bazie silverblue)
+#   org.gnome.Ptyxis.desktop       — Terminal (Ptyxis; silverblue-main zawiera Ptyxis)
+#
+# Aplikacje gamingowe (flatpaki — instalowane przy 1. boocie):
+#   com.valvesoftware.Steam.desktop        — Steam
+#   net.lutris.Lutris.desktop              — Lutris
+#   com.heroicgameslauncher.hgl.desktop    — Heroic Games Launcher
+#
+# Kolejność od lewej (po przycisku siatki aplikacji):
+#   Ustawienia | Pliki | Terminal | Brave | Steam | Lutris | Heroic
+#
+# UWAGA: flatpaki nie są zainstalowane w obrazie — nie mają .desktop w momencie
+# dconf update. Klucz favorite-apps jest jednak aplikowany jako wartość tekstowa —
+# GNOME Shell wyświetli je na pasku po zainstalowaniu flatpaków przy 1. boocie.
+favorite-apps=['org.gnome.Settings.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Ptyxis.desktop', 'brave-browser.desktop', 'com.valvesoftware.Steam.desktop', 'net.lutris.Lutris.desktop', 'com.heroicgameslauncher.hgl.desktop']
+
+[org/gnome/shell/extensions/dash-to-panel]
+# Pozycja paska: BOTTOM (dół ekranu, jak Windows taskbar)
+panel-positions='{"0":"BOTTOM"}'
+# Rozmiar ikon i wysokość paska
+panel-sizes='{"0":48}'
+# Pokaż listę okien (nie tylko dock z ulubionymi)
+show-window-previews=true
+# Zachowuj ulubione i uruchomione
+show-favorites=true
+show-running-apps=true
+# Zegar po prawej stronie paska
+show-clock-in-status-panel=true

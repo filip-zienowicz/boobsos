@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# boobsos-install-flatpaks — EDYCJA GAMINGOWA
+#
+# Nadpisuje bazowy skrypt /usr/libexec/boobsos-install-flatpaks (z BoobsOS base).
+# Zawiera WYŁĄCZNIE flatpaki gamingowe — BEZ OnlyOffice (to edycja Game, nie biurowa).
+#
+# Wywoływany przez boobsos-firstboot-flatpaks.service (oneshot, po network-online).
+# Aby dodać kolejne flatpaki: dopisz ID do tablicy FLATPAKS poniżej.
+#
+# Zweryfikowane Flathub IDs (czerwiec 2026):
+#   com.valvesoftware.Steam         — Steam (klient + Proton; gry Windows/Linux)
+#   net.lutris.Lutris               — Lutris (launcher: Wine, DOSBox, ScummVM, emulatory)
+#   com.heroicgameslauncher.hgl     — Heroic Games Launcher (Epic Games Store + GOG + Amazon)
+#   net.davidotek.pupgui2           — ProtonUp-Qt (manager wersji Proton-GE / Wine-GE)
+#   com.discordapp.Discord          — Discord (voice/chat dla graczy)
+#   com.obsproject.Studio           — OBS Studio (streaming / nagrywanie ekranu)
+set -euo pipefail
+
+FLATPAKS=(
+    # --- Gaming: platformy i launchery ---
+    com.valvesoftware.Steam           # Steam + Proton (gry Windows/Linux)
+    net.lutris.Lutris                 # Lutris — zarządzanie grami Linux + Wine
+    com.heroicgameslauncher.hgl       # Heroic — Epic Games Store + GOG + Amazon
+
+    # --- Gaming: narzędzia Proton/Wine ---
+    net.davidotek.pupgui2             # ProtonUp-Qt — manager wersji Proton-GE / Wine-GE
+
+    # --- Komunikacja i streaming ---
+    com.discordapp.Discord            # Discord — voice/chat dla graczy
+    com.obsproject.Studio             # OBS Studio — streaming / nagrywanie ekranu
+)
+
+STAMP_DIR="/var/lib/boobsos"
+STAMP_FILE="${STAMP_DIR}/firstboot-flatpaks.done"
+
+echo "[boobsos-install-flatpaks] Start (edycja gamingowa): $(date -Iseconds)"
+echo "[boobsos-install-flatpaks] Instalacja ${#FLATPAKS[@]} flatpaków z Flathub..."
+
+for app in "${FLATPAKS[@]}"; do
+    echo "[boobsos-install-flatpaks] Instaluję: ${app}"
+    flatpak install -y --noninteractive flathub "${app}" \
+        && echo "[boobsos-install-flatpaks] OK: ${app}" \
+        || echo "[boobsos-install-flatpaks] OSTRZEŻENIE: Nie udało się zainstalować ${app} — kontynuuję"
+done
+
+mkdir -p "${STAMP_DIR}"
+touch "${STAMP_FILE}"
+echo "[boobsos-install-flatpaks] Zakończono. Stamp: ${STAMP_FILE}"

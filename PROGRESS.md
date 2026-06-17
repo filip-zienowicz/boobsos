@@ -3,6 +3,7 @@
 Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śledzenie zmian").
 
 ## Zrobione
+- **Edycja Game (przepisana, czerwiec 2026)** — architektura zmieniona z `FROM boobsos:latest` (błąd: dziedziczyła cały DevOps) na `FROM ghcr.io/ublue-os/silverblue-nvidia:latest` (baza GNOME + sterowniki NVIDIA). Edycja Game jest teraz niezależna od BoobsOS base. Zawiera: branding/pulpit BoobsOS (F1+F3), Brave Browser, gaming RPM (gamemode, mangohud, gamescope, vulkan-tools, goverlay, steam-devices), flatpaki gaming (Steam, Lutris, Heroic, ProtonUp-Qt, Discord, OBS). Bez DevOps. Pliki zmienione: `editions/game/Containerfile`, `editions/game/files/usr/libexec/boobsos-install-flatpaks`, `editions/game/files/etc/dconf/db/local.d/00-boobsos` (nowy — favorite-apps gamingowy), `editions/game/README.md`, `.github/workflows/build-game.yml`, `README.md`.
 - **Branding (F0)** — logo przeniesione z `cycrus-ksef` do `branding/logo/`, paleta i zasady w `branding/BRANDING.md`.
 - **CLAUDE.md** — dopasowany do BoobsOS (kontekst projektu + branding).
 - **Decyzja: baza = Fedora**, model image-based (bootc/OCI). Szczegóły w `ARCHITECTURE.md`.
@@ -171,6 +172,57 @@ Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śl
 - `org.gnome.Settings.desktop` — Ustawienia
 - `brave-browser.desktop` — z pakietu brave-browser (razem z com.brave.Browser.desktop)
 - `code.desktop` — VS Code (z pakietu code, vscode.repo)
+
+## Edycja BoobsOS-Game (ZROBIONE)
+
+### Co zawiera
+
+Warstwa gamingowa na wierzchu `ghcr.io/filip-zienowicz/boobsos:latest` (DRY — nie duplikujemy stacku DevOps).
+
+**Nowe pliki:**
+- `editions/game/Containerfile` — FROM boobsos:latest + rebranding + rpm gaming + COPY flatpak skryptu
+- `editions/game/files/usr/libexec/boobsos-install-flatpaks` — nadpisuje bazowy skrypt; lista: OnlyOffice + Steam + Lutris + Heroic + ProtonUp-Qt + Discord + OBS
+- `editions/game/README.md` — dokumentacja edycji (co zawiera, jak zainstalować, architektura)
+- `.github/workflows/build-game.yml` — CI budujący edycję gamingową (push editions/game/**, schedule 05:30 UTC, workflow_dispatch)
+
+**Pakiety RPM gamingowe (dry-run zweryfikowany w boobsos:latest):**
+
+| Pakiet | Wersja | Status |
+|--------|--------|--------|
+| gamemode | 1.8.2-4.fc44 | OK |
+| mangohud | 0.8.3~rc1-2.fc44 | OK |
+| gamescope | 3.16.23-1.fc44 | OK |
+| vulkan-tools | 1.4.341.0-1.fc44 | OK |
+| goverlay | 1.7.5-1.fc44 | OK |
+| steam-devices | 1.0.0.101^... | OK |
+| wine | 11.0-3.fc44 | POMINIĘTE — 2 GB extra (114 pkg); Lutris zarządza Wine-GE przez ProtonUp-Qt |
+
+**Flatpaki (first-boot, przez usługę z bazy):**
+- `org.onlyoffice.desktopeditors` (z bazy — nie regresujemy)
+- `com.valvesoftware.Steam`
+- `net.lutris.Lutris`
+- `com.heroicgameslauncher.hgl`
+- `net.davidotek.pupgui2`
+- `com.discordapp.Discord`
+- `com.obsproject.Studio`
+
+**Rebranding:** `PRETTY_NAME="BoobsOS Game"`, `VARIANT="Game"`, `VARIANT_ID=game`. `NAME=BoobsOS` i `ID=boobsos` bez zmian.
+
+**CI (build-game.yml):**
+- Trigger: push na `editions/game/**`, schedule `30 5 * * *` (30 min po bazie), workflow_dispatch
+- Login do ghcr.io PRZED pull bazowego obrazu (GITHUB_TOKEN)
+- Buduje → `ghcr.io/filip-zienowicz/boobsos-game:latest` + SHA tag
+- Zwalnia miejsce na dysku (ten sam wzorzec co build.yml)
+
+**Walidacja:**
+- `bash -n` skryptu flatpak: OK
+- YAML build-game.yml: poprawny (python yaml.safe_load)
+- dry-run rpm: wszystkie 6 pakietów dostępne w Fedora 44 repo
+
+**Instalacja przez użytkownika:**
+```bash
+sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game:latest
+```
 
 ## Następne (wg roadmapy w ARCHITECTURE.md)
 - **F5** — CI + publikacja obrazu do rejestru (ghcr.io lub quay.io)

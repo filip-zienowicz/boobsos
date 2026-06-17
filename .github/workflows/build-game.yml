@@ -1,0 +1,75 @@
+name: build-boobsos-game
+
+# Buduje edycję gamingową BoobsOS-Game i publikuje do ghcr.io.
+# Baza: ghcr.io/ublue-os/silverblue-nvidia:latest (publiczny obraz ublue — GNOME + sterowniki NVIDIA).
+# NIE zależy od naszego obrazu bazowego boobsos — buduje niezależnie.
+#
+# Wyzwalacze:
+#   - push na main zmieniający editions/game/** lub files/ (branding)
+#   - schedule: codziennie 06:00 UTC (ublue aktualizuje silverblue-nvidia co noc)
+#   - workflow_dispatch: ręczne odpalenie
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "editions/game/**"
+      - "files/**"
+      - "Containerfile"
+  schedule:
+    - cron: "0 6 * * *"   # codziennie 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write           # wymagane: wypchnięcie obrazu do ghcr.io
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BASE_IMAGE: ghcr.io/ublue-os/silverblue-nvidia
+  GAME_IMAGE: ghcr.io/${{ github.repository_owner }}/boobsos-game
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # Obraz nvidia jest DUŻY (ok. 8–12 GB) → zwalniamy miejsce na dysku agenta.
+      - name: Zwolnij miejsce na dysku
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          sudo docker image prune --all --force || true
+          df -h /
+
+      # Login do ghcr.io — potrzebny do push; pull silverblue-nvidia jest publiczny
+      # (bez logowania), ale login zapobiega rate-limitom.
+      - name: Login do ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      # Pull bazowego obrazu ublue silverblue-nvidia przed buildem.
+      - name: Pull bazowego obrazu silverblue-nvidia
+        run: |
+          podman pull "${BASE_IMAGE}:latest"
+          echo "Base image pulled: $(podman inspect --format '{{.Id}}' ${BASE_IMAGE}:latest | head -c 12)"
+
+      # Build edycji gamingowej.
+      # Context: katalog GŁÓWNY repo — bo Containerfile odwołuje się do files/ (COPY files/ /)
+      # oraz do editions/game/files/ (COPY editions/game/files/ /).
+      - name: Build obrazu gamingowego (buildah/podman)
+        run: |
+          podman build --format docker \
+            -f editions/game/Containerfile \
+            -t "${GAME_IMAGE}:latest" \
+            -t "${GAME_IMAGE}:${GITHUB_SHA::7}" \
+            .
+
+      - name: Push do rejestru
+        run: |
+          podman push "${GAME_IMAGE}:latest"
+          podman push "${GAME_IMAGE}:${GITHUB_SHA::7}"
+          echo "Opublikowano: ${GAME_IMAGE}:latest (SHA: ${GITHUB_SHA::7})"

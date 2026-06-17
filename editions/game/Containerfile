@@ -1,0 +1,222 @@
+# BoobsOS-Game — Containerfile (edycja gamingowa)
+#
+# Baza: ghcr.io/ublue-os/silverblue-nvidia:latest
+#   = Universal Blue Silverblue (Fedora Atomic + GNOME + GDM) z preinstalowanymi
+#     sterownikami NVIDIA (akmod-nvidia / kmod-nvidia) oraz mesa (AMD/Intel).
+#   Obraz zweryfikowany: docker manifest inspect ghcr.io/ublue-os/silverblue-nvidia:latest
+#   → manifest OCI v1 (czerwiec 2026) — obraz istnieje i jest publiczny.
+#
+# Ta edycja NIE dziedziczy obrazu BoobsOS DevOps.
+# Nie ma: VS Code, Docker, Kubernetes, Terraform, AWS/Azure/gcloud CLI,
+#          Vault/SOPS/age, Tor, openconnect, glab, lazygit, mise, ansible…
+# Zawiera: branding/pulpit BoobsOS (F1+F3) + gaming RPM + Brave + Flatpaki gaming.
+FROM ghcr.io/ublue-os/silverblue-nvidia:latest
+
+# ---------------------------------------------------------------------------
+# OVERLAY SYSTEMOWY
+#
+# Nakładamy pliki z katalogu głównego repo (files/).
+# Zawiera: tapetę, dconf, plymouth, ikony, Flathub remote, firstboot service,
+#          repozytoria third-party (brave-browser, google-chrome, docker-ce, itd.).
+# Repozytoria DevOps (docker-ce, kubernetes, hashicorp, azure, gcloud, vscode)
+# są nieszkodliwe jako pliki .repo — nic z nich nie instalujemy.
+# ---------------------------------------------------------------------------
+COPY files/ /
+
+# ---------------------------------------------------------------------------
+# NADPISANIE dconf — favorite-apps gamingowy
+#
+# Pliki z editions/game/files/ nakładamy PO files/, żeby nadpisać
+# 00-boobsos (favorite-apps) wersją gamingową.
+# ---------------------------------------------------------------------------
+COPY editions/game/files/ /
+
+# ---------------------------------------------------------------------------
+# G0.1: Rebranding os-release
+#
+# Modyfikujemy /usr/lib/os-release in-place (symlink → plik; sed bezpieczny).
+# Pola tożsamości: NAME=BoobsOS, PRETTY_NAME="BoobsOS Game",
+#                  ID=boobsos, VARIANT="Game", VARIANT_ID=game.
+# ---------------------------------------------------------------------------
+RUN sed -i \
+        -e 's|^NAME=.*|NAME="BoobsOS"|' \
+        -e 's|^PRETTY_NAME=.*|PRETTY_NAME="BoobsOS Game"|' \
+        -e 's|^ID=.*|ID=boobsos|' \
+        -e 's|^ID_LIKE=.*|ID_LIKE="fedora"|' \
+        -e 's|^HOME_URL=.*|HOME_URL="https://boobsos.example.com"|' \
+        -e 's|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://boobsos.example.com/docs"|' \
+        -e 's|^SUPPORT_URL=.*|SUPPORT_URL="https://boobsos.example.com/support"|' \
+        -e 's|^BUG_REPORT_URL=.*|BUG_REPORT_URL="https://gitlab.example.com/boobsos/boobsos/-/issues"|' \
+        -e 's|^CPE_NAME=.*|CPE_NAME="cpe:/o:boobsos:boobsos:44"|' \
+        /usr/lib/os-release \
+    && grep -q '^CPE_NAME=' /usr/lib/os-release \
+        || echo 'CPE_NAME="cpe:/o:boobsos:boobsos:44"' >> /usr/lib/os-release \
+    && grep -q '^VARIANT=' /usr/lib/os-release \
+        && sed -i 's|^VARIANT=.*|VARIANT="Game"|' /usr/lib/os-release \
+        || echo 'VARIANT="Game"' >> /usr/lib/os-release
+RUN grep -q '^VARIANT_ID=' /usr/lib/os-release \
+        && sed -i 's|^VARIANT_ID=.*|VARIANT_ID=game|' /usr/lib/os-release \
+        || echo 'VARIANT_ID=game' >> /usr/lib/os-release
+RUN grep -q '^ANSI_COLOR=' /usr/lib/os-release \
+        || echo 'ANSI_COLOR="38;2;37;99;235"' >> /usr/lib/os-release
+RUN grep -q '^LOGO=' /usr/lib/os-release \
+        || echo 'LOGO=boobsos' >> /usr/lib/os-release
+RUN grep -E '^(NAME|PRETTY_NAME|ID|VARIANT|VARIANT_ID)' /usr/lib/os-release \
+    && echo "os-release Game: rebranding OK"
+
+# ---------------------------------------------------------------------------
+# G0.2: Rozszerzenia GNOME Shell — tradycyjny desktop (taskbar + tray)
+#
+# Zweryfikowane pakiety w Fedora 44 / silverblue-main (dostępne w bazie nvidia):
+#   gnome-shell-extension-dash-to-panel  — pasek zadań na dole
+#   gnome-shell-extension-appindicator  — ikony zasobnika systemowego (tray)
+# ---------------------------------------------------------------------------
+RUN dnf install -y \
+    gnome-shell-extension-dash-to-panel \
+    gnome-shell-extension-appindicator \
+    && dnf clean all
+
+# ---------------------------------------------------------------------------
+# G0.3: Plymouth — motyw startowy BoobsOS
+#
+# Motyw 'boobsos' (two-step) z files/usr/share/plymouth/themes/boobsos/
+# (nakładany przez COPY files/ / wyżej).
+# ---------------------------------------------------------------------------
+RUN cp /usr/share/plymouth/themes/boobsos/watermark.png \
+       /usr/share/plymouth/themes/spinner/watermark.png \
+    || true
+
+RUN plymouth-set-default-theme boobsos \
+    || { mkdir -p /etc/plymouth \
+         && printf '[Daemon]\nTheme=boobsos\n' > /etc/plymouth/plymouthd.conf; } \
+    && echo "Plymouth theme: boobsos (OK)"
+
+# ---------------------------------------------------------------------------
+# G0.4: dconf — aktywacja ustawień GNOME
+#
+# Aktywuje pliki z etc/dconf/db/local.d/ i etc/dconf/db/gdm.d/.
+# Uruchamiamy po COPY files/ + COPY editions/game/files/ + instalacji rozszerzeń.
+# ---------------------------------------------------------------------------
+RUN dconf update \
+    && echo "dconf update: OK"
+
+# ---------------------------------------------------------------------------
+# G0.5: Ikona dystrybucji — odświeżenie cache motywu hicolor
+# ---------------------------------------------------------------------------
+RUN gtk4-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
+    || gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null \
+    || true
+
+# ---------------------------------------------------------------------------
+# G0.6: Włączenie Flathub i usługi first-boot
+#
+# Flathub jest rejestrowany automatycznie przez plik
+# files/etc/flatpak/remotes.d/flathub.flatpakrepo (COPY files/ / wyżej).
+# Usługa firstboot instaluje flatpaki gaming przy pierwszym uruchomieniu.
+# ---------------------------------------------------------------------------
+RUN systemctl enable boobsos-firstboot-flatpaks.service
+
+# ---------------------------------------------------------------------------
+# G0.7: Baseline bezpieczeństwa
+# ---------------------------------------------------------------------------
+RUN systemctl enable firewalld.service \
+    && systemctl enable auditd.service \
+    && systemctl enable logrotate.timer \
+    && echo "Usługi bezpieczeństwa: firewalld auditd logrotate.timer — enabled"
+
+# ---------------------------------------------------------------------------
+# G0.8: Auto-aktualizacje bootc
+# ---------------------------------------------------------------------------
+RUN systemctl enable bootc-fetch-apply-updates.timer \
+    && echo "bootc auto-update timer — enabled"
+
+# ---------------------------------------------------------------------------
+# G1: Brave Browser (przeglądarka dla gracza)
+#
+# Brave z files/etc/yum.repos.d/brave-browser.repo (nakładane przez COPY files/).
+# Wymaga usunięcia symlinku /opt → realny katalog (wzorzec Bazzite/ublue):
+# /opt to symlink → /var/opt (poza obrazem); rpm nie rozpakowałby plików.
+#
+# Brave JEST jedynym wyjątkiem "nie-gaming" — gracz potrzebuje przeglądarki.
+# (Alternatywa: Firefox jest już w bazie silverblue — można pominąć Brave
+#  i użyć go. Decyzja: dodajemy Brave dla spójności z brandingiem BoobsOS.)
+#
+# Dry-run potwierdzony w obrazie silverblue-main:
+#   brave-browser 1.91.172-1 → OK (+ brave-keyring dep)
+# ---------------------------------------------------------------------------
+RUN rm -f /opt && mkdir -p /opt
+
+RUN rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc \
+    && echo "Brave Browser GPG key: OK"
+
+RUN dnf install -y \
+    brave-browser \
+    && dnf clean all
+
+# ---------------------------------------------------------------------------
+# G2: Pakiety RPM gamingowe
+#
+# Wszystkie zweryfikowane w Fedora 44 (silverblue-main jako baza nvidia):
+#   gamemode     1.8.2-4.fc44     OK — daemon CPU/IO governor dla gier
+#   mangohud     0.8.3~rc1-2.fc44 OK — overlay FPS/GPU/CPU/RAM w grze (Vulkan/DXVK)
+#   gamescope    3.16.23-1.fc44   OK — Wayland compositor: embedded mode, FSR, HDR
+#   vulkan-tools 1.4.341.0-1.fc44 OK — vulkaninfo, vkcube (diagnostyka Vulkan + nvidia)
+#   goverlay     1.7.5-1.fc44     OK — GUI do konfiguracji MangoHud i vkBasalt
+#   steam-devices 1.0.0.101^...   OK — reguły udev dla padów (PS3/4/5, Xbox, Steam Deck)
+#
+# POMINIĘTE:
+#   wine — 11.0-3.fc44, ale ciągnie 114 pakietów (~2 GB).
+#          Lutris/Heroic (flatpak) zarządzają własnymi wersjami Wine-GE przez ProtonUp-Qt.
+#          Użytkownik może doinstalować ręcznie.
+#
+# Sterowniki NVIDIA (akmod-nvidia, xorg-x11-drv-nvidia, nvidia-settings, cuda toolkit)
+# pochodzą z bazy ghcr.io/ublue-os/silverblue-nvidia — NIE instalujemy ich ręcznie.
+# Mesa (AMD/Intel) też z bazy.
+# ---------------------------------------------------------------------------
+RUN dnf install -y \
+    # Daemon wydajności (CPU governor nice/ioprio) dla gier — aktywowany przez gamemoderun
+    gamemode \
+    # Overlay wydajności w grze: FPS, GPU temp, RAM, frametime — wymaga Vulkan/DXVK
+    mangohud \
+    # Wayland compositor dla gier: skalowanie (FSR/NIS), HDR, limiter FPS, embedded mode
+    gamescope \
+    # Narzędzia diagnostyczne Vulkan (vulkaninfo, vkcube) — weryfikacja sterowników GPU
+    vulkan-tools \
+    # GUI konfiguracyjny dla MangoHud i vkBasalt (profil per gra, kolory, pozycja)
+    goverlay \
+    # Reguły udev dla padów gamingowych (PS3/PS4/PS5, Xbox, Steam Controller, Steam Deck)
+    # Bez tego pady działają tylko jako root; z tym — jako zwykły użytkownik (udev)
+    steam-devices \
+    && dnf clean all
+
+# ---------------------------------------------------------------------------
+# G3: dconf — finalne odświeżenie po G1+G2
+#
+# Uruchamiamy dconf update ponownie, żeby wbudować ewentualne klucze
+# dodane przez pakiety w G1+G2 (np. brave-browser.desktop w favorite-apps).
+# ---------------------------------------------------------------------------
+RUN dconf update \
+    && echo "dconf update G3 (finalne): OK"
+
+# ---------------------------------------------------------------------------
+# G4: Flatpaki gamingowe — skrypt first-boot
+#
+# Skrypt /usr/libexec/boobsos-install-flatpaks (nadpisany przez
+# COPY editions/game/files/ wyżej) zawiera listę:
+#   com.valvesoftware.Steam       — Steam + Proton (gry Windows i Linux)
+#   net.lutris.Lutris             — Lutris (launcher: Wine, DOSBox, ScummVM, emulatory)
+#   com.heroicgameslauncher.hgl   — Heroic Games Launcher (Epic + GOG + Amazon)
+#   net.davidotek.pupgui2         — ProtonUp-Qt (manager Proton-GE / Wine-GE)
+#   com.discordapp.Discord        — Discord (voice/chat dla graczy)
+#   com.obsproject.Studio         — OBS Studio (streaming / nagrywanie ekranu)
+#
+# NIE ma OnlyOffice — to edycja gamingowa, nie biurowa.
+# ---------------------------------------------------------------------------
+RUN chmod +x /usr/libexec/boobsos-install-flatpaks \
+    && bash -n /usr/libexec/boobsos-install-flatpaks \
+    && echo "boobsos-install-flatpaks (game edition): syntax OK"
+
+# ---------------------------------------------------------------------------
+# LINT — weryfikacja poprawności obrazu bootc
+# ---------------------------------------------------------------------------
+RUN bootc container lint
