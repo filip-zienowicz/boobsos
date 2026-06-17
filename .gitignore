@@ -1,5 +1,8 @@
 # BoobsOS — .gitignore
 
+# Paczki RPM (artefakty budowania)
+packages/out/
+
 # Artefakty generowania ISO / obrazów dysków
 *.iso
 *.qcow2
