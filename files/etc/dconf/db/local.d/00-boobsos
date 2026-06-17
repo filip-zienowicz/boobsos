@@ -43,7 +43,8 @@ enabled-extensions=['dash-to-panel@jderose9.github.com', 'appindicatorsupport@rg
 #
 # Celowo BRAK: firefox.desktop (zainstalowany ale odpięty), org.gnome.Software.desktop
 # Chrome zainstalowany (F4.1) ale NIE przypięty — tylko Brave na pasku.
-favorite-apps=['brave-browser.desktop', 'code.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Ptyxis.desktop', 'org.gnome.Settings.desktop']
+# Ustawienia jako PIERWSZE (skrajnie z lewej, przy przycisku siatki aplikacji / 9 kropek).
+favorite-apps=['org.gnome.Settings.desktop', 'brave-browser.desktop', 'code.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Ptyxis.desktop']
 
 [org/gnome/shell/extensions/dash-to-panel]
 # Pozycja paska: BOTTOM (dół ekranu, jak Windows taskbar)

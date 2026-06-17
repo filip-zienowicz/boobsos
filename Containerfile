@@ -736,7 +736,9 @@ RUN { dnf install -y glib2-devel \
          rel="${r#/}"; mkdir -p "$(dirname "$rel")"; \
          gresource extract "$GR" "$r" > "$rel"; \
        done \
-    && cp /usr/share/boobsos/welcome.svg org/gnome/Tour/welcome.svg \
+    && for f in $(find org/gnome/Tour -maxdepth 1 -name '*.svg' -size +5k); do \
+         cp /usr/share/boobsos/welcome.svg "$f"; \
+       done \
     && { echo '<?xml version="1.0" encoding="UTF-8"?>'; echo '<gresources>'; \
          echo '  <gresource prefix="/">'; \
          for r in $(gresource list "$GR"); do echo "    <file>${r#/}</file>"; done; \
