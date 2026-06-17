@@ -718,37 +718,14 @@ RUN dconf update \
     && echo "dconf update F4: OK"
 
 # ---------------------------------------------------------------------------
-# F4.4: gnome-tour — podmiana grafiki powitalnej na logo BoobsOS
+# F4.4: ekran powitalny — POMINIĘTE (rozwiązane inaczej)
 #
-# gnome-tour pokazuje własny obraz (balon) z resources.gresource, nie LOGO z
-# os-release. Podmieniamy /org/gnome/Tour/welcome.svg na logo BoobsOS:
-#   files/usr/share/boobsos/welcome.svg (SVG z osadzonym logo, dostarczony przez COPY).
-# Procedura (zweryfikowana w kontenerze): glib2-devel daje gresource +
-# glib-compile-resources → ekstrakcja wszystkich 17 zasobów → podmiana welcome.svg
-# → odtworzenie .gresource.xml (prefix="/") → rekompilacja → nadpisanie gresource.
-# Cały blok w '|| echo skipped' — gdyby cokolwiek zawiodło, build NIE pada
-# (zostaje oryginalny balon, reszta brandingu działa).
+# „Welcome to BoobsOS + Take Tour/Skip" z balonem to DIALOG POWITALNY GNOME SHELL
+# (welcome-dialog), a NIE gnome-tour. Jego grafika jest zaszyta w zasobach
+# gnome-shell. Zamiast kruchej podmiany gresource shella — wyłączamy ten
+# jednorazowy dialog przez dconf: org/gnome/shell welcome-dialog-last-shown-version
+# (patrz files/etc/dconf/db/local.d/00-boobsos). gnome-tour zostaje bez zmian.
 # ---------------------------------------------------------------------------
-RUN { dnf install -y glib2-devel \
-    && GR=/usr/share/gnome-tour/resources.gresource \
-    && W="$(mktemp -d)" && cd "$W" \
-    && for r in $(gresource list "$GR"); do \
-         rel="${r#/}"; mkdir -p "$(dirname "$rel")"; \
-         gresource extract "$GR" "$r" > "$rel"; \
-       done \
-    && for f in $(find org/gnome/Tour -maxdepth 1 -name '*.svg' -size +5k); do \
-         cp /usr/share/boobsos/welcome.svg "$f"; \
-       done \
-    && { echo '<?xml version="1.0" encoding="UTF-8"?>'; echo '<gresources>'; \
-         echo '  <gresource prefix="/">'; \
-         for r in $(gresource list "$GR"); do echo "    <file>${r#/}</file>"; done; \
-         echo '  </gresource>'; echo '</gresources>'; } > t.xml \
-    && glib-compile-resources t.xml --target="$GR" \
-    && cd / && rm -rf "$W" \
-    && dnf remove -y glib2-devel \
-    && dnf clean all \
-    && echo "gnome-tour: welcome.svg → logo BoobsOS OK" ; } \
-    || echo "gnome-tour rebrand skipped (build kontynuuje)"
 
 # ---------------------------------------------------------------------------
 # LINT — obowiązkowy krok dla obrazów bootc

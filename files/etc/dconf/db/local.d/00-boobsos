@@ -25,6 +25,10 @@ picture-options='zoom'
 button-layout='appmenu:minimize,maximize,close'
 
 [org/gnome/shell]
+# Wyłącz dialog powitalny GNOME Shell ("Welcome to ... / Take Tour" z balonem).
+# To dialog gnome-shella (nie gnome-tour) — jego grafika (balon) jest zaszyta w
+# zasobach shella. Ustawiamy "już pokazany" na wysoką wersję → nie pojawia się.
+welcome-dialog-last-shown-version='99'
 # Włączone rozszerzenia GNOME Shell:
 #   dash-to-panel@jderose9.github.com        — pasek zadań na dole (tradycyjny desktop)
 #   appindicatorsupport@rgcjonas.gmail.com   — ikony zasobnika systemowego (tray)
