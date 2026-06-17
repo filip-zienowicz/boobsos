@@ -3,3 +3,6 @@ FROM boobsos:dev
 RUN useradd -m -G wheel -s /usr/bin/zsh boobs && echo 'boobs:boobs' | chpasswd
 # Autologin GNOME, by VM od razu wszedł na pulpit
 RUN mkdir -p /etc/gdm && printf '[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=boobs\n' > /etc/gdm/custom.conf
+# Podgląd: otwórz SSH w firewalld (do live-tweaków przez SSH; tylko warstwa demo,
+# nie trafia do właściwej dystrybucji). firewall-offline-cmd działa bez działającego firewalld.
+RUN firewall-offline-cmd --add-service=ssh 2>/dev/null || true
