@@ -1,0 +1,16 @@
+[Unit]
+Description=BoobsOS: wykryj GPU NVIDIA i dobierz wariant sterownika (pierwszy boot)
+# Potrzebny internet (pobranie obrazu -nvidia) i działający bootc.
+After=network-online.target
+Wants=network-online.target
+# Uruchom tylko raz — stamp tworzony przez skrypt.
+ConditionPathExists=!/var/lib/boobsos/gpu-autorebase.done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/boobsos-gpu-autorebase
+# Nie wywalaj boota, jeśli coś pójdzie nie tak (np. brak sieci) — spróbuje następnym razem.
+SuccessExitStatus=0 1
+
+[Install]
+WantedBy=multi-user.target

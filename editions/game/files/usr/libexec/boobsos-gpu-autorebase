@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# boobsos-gpu-autorebase — po pierwszym uruchomieniu wykrywa GPU NVIDIA i, jeśli jest,
+# przełącza system na wariant obrazu '-nvidia' (bootc switch + restart).
+#
+# Filozofia: domyślny obraz to lekki wariant mesa (AMD/Intel/nouveau — otwarte
+# sterowniki działają od razu, bez nic). Tylko karty NVIDIA potrzebują zamkniętego
+# modułu, który jest w osobnym, cięższym obrazie -nvidia. Zamiast pakować sterowniki
+# NVIDIA do każdego systemu, dobieramy je automatycznie po starcie tylko gdy trzeba.
+#
+# Cel wyliczamy z AKTUALNEGO ref obrazu (boobsos-game → boobsos-game-nvidia), więc
+# działa z dowolnym rejestrem (ghcr lub własny), bez twardego adresu.
+set -euo pipefail
+
+STAMP=/var/lib/boobsos/gpu-autorebase.done
+mkdir -p /var/lib/boobsos
+[ -f "$STAMP" ] && exit 0
+
+# Ref aktualnie zabootowanego obrazu (np. ghcr.io/.../boobsos-game:latest)
+img="$(bootc status 2>/dev/null | grep -oE '[A-Za-z0-9._/-]*boobsos-game(-nvidia)?[A-Za-z0-9._:/-]*' | head -1 || true)"
+
+# Już na wariancie nvidia? Nic nie rób.
+case "$img" in
+  *nvidia*) logger -t boobsos-gpu "Wariant nvidia — pomijam autorebase"; touch "$STAMP"; exit 0 ;;
+esac
+
+# Wykryj kartę NVIDIA (klasa VGA/3D/Display + vendor NVIDIA)
+if lspci -nn 2>/dev/null | grep -iE 'VGA|3D|Display' | grep -qi nvidia; then
+  if [ -n "$img" ]; then
+    target="${img/boobsos-game/boobsos-game-nvidia}"
+    if [ "$target" != "$img" ]; then
+      logger -t boobsos-gpu "Wykryto GPU NVIDIA → przełączam na $target (restart)"
+      touch "$STAMP"
+      exec bootc switch --apply "$target"   # przełącza i restartuje
+    fi
+  fi
+  logger -t boobsos-gpu "Wykryto NVIDIA, ale nie udało się wyliczyć celu (img='$img')"
+else
+  logger -t boobsos-gpu "Brak GPU NVIDIA — zostaję na wariancie mesa"
+fi
+touch "$STAMP"

@@ -128,20 +128,26 @@ do GitLab Container Registry przy push na gałąź `main`.
 
 ## Edycje
 
-BoobsOS dostępny w dwóch niezależnych wariantach.
+BoobsOS dostępny w trzech niezależnych obrazach.
 
 | Edycja | Obraz | Baza | Opis |
 |--------|-------|------|------|
 | **Bazowa** | `ghcr.io/filip-zienowicz/boobsos:latest` | ublue silverblue-main | Stack DevOps: Docker, K8s, VS Code, Brave, branding |
-| **Game** | `ghcr.io/filip-zienowicz/boobsos-game:latest` | ublue silverblue-nvidia | Czysto gamingowa: Steam, Lutris, Heroic, MangoHud, Gamescope, Brave, Discord, OBS — **BEZ DevOps**, **sterowniki NVIDIA** |
+| **Game (mesa)** | `ghcr.io/filip-zienowicz/boobsos-game:latest` | ublue silverblue-main | Gamingowa: Steam, Lutris, Heroic, MangoHud, Gamescope, Brave, Discord, OBS — **BEZ DevOps**, AMD/Intel/nouveau (otwarte sterowniki) |
+| **Game (nvidia)** | `ghcr.io/filip-zienowicz/boobsos-game-nvidia:latest` | ublue silverblue-nvidia | Jak Game mesa + **preinstalowane sterowniki NVIDIA** (akmod-nvidia) |
 
-Edycja Game jest **niezależna** od bazowej — nie dziedziczy stacku DevOps, bazuje bezpośrednio
-na `ghcr.io/ublue-os/silverblue-nvidia:latest` (preinstalowane sterowniki NVIDIA + mesa AMD/Intel).
+Edycja Game jest **niezależna** od bazowej — nie dziedziczy stacku DevOps.
+Jeden Containerfile (`editions/game/Containerfile`) budowany z `ARG BASE_IMAGE` produkuje dwa obrazy
+(wzorzec Bazzite). AMD/Intel używają otwartych sterowników z jądra; NVIDIA wymaga osobnej bazy ublue.
 
 ### Instalacja edycji Game
 
 ```bash
+# AMD/Intel (domyślny wariant — lekki):
 sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game:latest
+
+# NVIDIA:
+sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game-nvidia:latest
 ```
 
 Po restarcie usługa `boobsos-firstboot-flatpaks` zainstaluje Steam, Lutris, Heroic, ProtonUp-Qt, Discord i OBS Studio.

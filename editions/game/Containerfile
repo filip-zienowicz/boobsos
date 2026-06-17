@@ -1,16 +1,36 @@
 # BoobsOS-Game — Containerfile (edycja gamingowa)
 #
-# Baza: ghcr.io/ublue-os/silverblue-nvidia:latest
-#   = Universal Blue Silverblue (Fedora Atomic + GNOME + GDM) z preinstalowanymi
-#     sterownikami NVIDIA (akmod-nvidia / kmod-nvidia) oraz mesa (AMD/Intel).
-#   Obraz zweryfikowany: docker manifest inspect ghcr.io/ublue-os/silverblue-nvidia:latest
-#   → manifest OCI v1 (czerwiec 2026) — obraz istnieje i jest publiczny.
+# DWIE BAZY — jeden Containerfile, dwa obrazy (wzorzec Bazzite):
+#
+#   wariant mesa  (domyślny):
+#     BASE_IMAGE = ghcr.io/ublue-os/silverblue-main
+#     → mesa (amdgpu/radeonsi, i915/xe, nouveau) z jądra + pakietów Fedory.
+#       Obsługuje: AMD Radeon RX 5000+, Intel Arc/Iris Xe, starsze karty AMD/Intel/nouveau.
+#       Lekki: brak sterowników NVIDIA w obrazie.
+#     Budowany jako: ghcr.io/filip-zienowicz/boobsos-game:latest
+#
+#   wariant nvidia:
+#     BASE_IMAGE = ghcr.io/ublue-os/silverblue-nvidia
+#     → akmod-nvidia / kmod-nvidia preinstalowane przez ublue;
+#       mesa (AMD/Intel) też obecna (nadzbiór bazy mesa).
+#     Budowany jako: ghcr.io/filip-zienowicz/boobsos-game-nvidia:latest
+#
+#   Weryfikacja manifests:
+#     docker manifest inspect ghcr.io/ublue-os/silverblue-main:latest   → OCI v1 (OK)
+#     docker manifest inspect ghcr.io/ublue-os/silverblue-nvidia:latest → OCI v1 (OK)
 #
 # Ta edycja NIE dziedziczy obrazu BoobsOS DevOps.
 # Nie ma: VS Code, Docker, Kubernetes, Terraform, AWS/Azure/gcloud CLI,
 #          Vault/SOPS/age, Tor, openconnect, glab, lazygit, mise, ansible…
 # Zawiera: branding/pulpit BoobsOS (F1+F3) + gaming RPM + Brave + Flatpaki gaming.
-FROM ghcr.io/ublue-os/silverblue-nvidia:latest
+#
+# Pakiety gaming (gamemode/mangohud/gamescope/vulkan-tools/goverlay/steam-devices)
+# i Brave są wspólne dla obu wariantów. Sterowniki GPU pochodzą wyłącznie z bazy.
+#
+# Dry-run gaming RPM + Brave na silverblue-main: wszystkie 7 pakietów dostępne OK.
+# Na silverblue-nvidia: nadzbiór bazy main — zakłada się pełną zgodność.
+ARG BASE_IMAGE=ghcr.io/ublue-os/silverblue-main
+FROM ${BASE_IMAGE}:latest
 
 # ---------------------------------------------------------------------------
 # OVERLAY SYSTEMOWY
@@ -131,6 +151,19 @@ RUN systemctl enable bootc-fetch-apply-updates.timer \
     && echo "bootc auto-update timer — enabled"
 
 # ---------------------------------------------------------------------------
+# G0.9: Auto-dobór sterownika GPU po pierwszym boocie
+#
+# Domyślny obraz to wariant mesa (AMD/Intel/nouveau). Usługa first-boot wykrywa
+# kartę NVIDIA (lspci) i jeśli jest — przełącza system na wariant '-nvidia'
+# (bootc switch + restart). Czyli „system sam doinstalowuje sterownik po starcie",
+# bez pakowania NVIDIA do obrazów AMD/Intel. Na wariancie -nvidia usługa nic nie robi.
+# Skrypt + unit z editions/game/files/ (COPY wyżej). lspci wymaga pciutils.
+# ---------------------------------------------------------------------------
+RUN chmod +x /usr/libexec/boobsos-gpu-autorebase \
+    && systemctl enable boobsos-gpu-autorebase.service \
+    && echo "GPU autorebase service — enabled"
+
+# ---------------------------------------------------------------------------
 # G1: Brave Browser (przeglądarka dla gracza)
 #
 # Brave z files/etc/yum.repos.d/brave-browser.repo (nakładane przez COPY files/).
@@ -187,6 +220,8 @@ RUN dnf install -y \
     # Reguły udev dla padów gamingowych (PS3/PS4/PS5, Xbox, Steam Controller, Steam Deck)
     # Bez tego pady działają tylko jako root; z tym — jako zwykły użytkownik (udev)
     steam-devices \
+    # lspci — potrzebny do wykrycia GPU NVIDIA w usłudze auto-dobór sterownika (G0.9)
+    pciutils \
     && dnf clean all
 
 # ---------------------------------------------------------------------------
