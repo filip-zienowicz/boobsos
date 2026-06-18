@@ -10,7 +10,7 @@ Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śl
   - `boobsos-game-nvidia:latest` (baza `silverblue-nvidia`, akmod-nvidia preinstalowane)
 - **boobsos-edition** — narzędzie do przełączania edycji: `status` / `list` / `switch dev` / `switch game`. Wykonuje `bootc switch` + restart, `/home` współdzielone między edycjami.
 - **Auto-rebase GPU (boobsos-gpu-autorebase)** — usługa first-boot wykrywa kartę NVIDIA w wariancie mesa i automatycznie przełącza na `boobsos-game-nvidia:latest`.
-- **CI GitHub Actions + ghcr.io** — `build.yml` (boobsos:latest, schedule 05:00 UTC), `build-game.yml` (boobsos-game + boobsos-game-nvidia, matrix, schedule 05:30 UTC). Obrazy publiczne na `ghcr.io`.
+- **CI GitHub Actions + ghcr.io** — `build.yml` (boobsos:latest, schedule 05:00 UTC), `build-game.yml` (boobsos-game + boobsos-game-nvidia, matrix, schedule 06:00 UTC). Obrazy publiczne na `ghcr.io`.
 - **GitHub Pages** — strona projektu: https://filip-zienowicz.github.io/boobsos/. HTML + CSS zaktualizowane o edycje dev/game, motyw kolorów kart, narzędzie boobsos-edition.
 - **Branding (F0)** — logo przeniesione z `cycrus-ksef` do `branding/logo/`, paleta i zasady w `branding/BRANDING.md`.
 - **CLAUDE.md** — dopasowany do BoobsOS (kontekst projektu + branding).
@@ -196,13 +196,18 @@ Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śl
 
 ### Co zawiera
 
-Warstwa gamingowa na wierzchu `ghcr.io/filip-zienowicz/boobsos:latest` (DRY — nie duplikujemy stacku DevOps).
+Edycja gamingowa budowana z **niezależnej bazy ublue** (`silverblue-main` / `silverblue-nvidia`),
+NIE `FROM boobsos:latest` (poprzednia architektura dziedziczyła cały stack DevOps — błąd, naprawione).
 
 **Nowe pliki:**
-- `editions/game/Containerfile` — FROM boobsos:latest + rebranding + rpm gaming + COPY flatpak skryptu
-- `editions/game/files/usr/libexec/boobsos-install-flatpaks` — nadpisuje bazowy skrypt; lista: OnlyOffice + Steam + Lutris + Heroic + ProtonUp-Qt + Discord + OBS
+- `editions/game/Containerfile` — `ARG BASE_IMAGE` (mesa/nvidia) + rebranding + rpm gaming + COPY flatpak skryptu + GPU autorebase
+- `editions/game/files/usr/libexec/boobsos-install-flatpaks` — nadpisuje bazowy skrypt; lista gaming-only (bez OnlyOffice): Steam + Lutris + Heroic + ProtonUp-Qt + Discord + OBS
+- `editions/game/files/etc/fastfetch/config.jsonc` — czerwona paleta fastfetch (nadpisuje niebieską z bazy)
+- `editions/game/files/etc/skel/.config/MangoHud/MangoHud.conf` — domyślny overlay (fps/temp/ram, akcent #DC2626)
+- `editions/game/files/etc/gamemode.ini` — domyślne ustawienia GameMode (renice, governor performance)
+- `editions/game/files/etc/hostname` — `boobsos-game` (odróżnia od dev `boobsos`)
 - `editions/game/README.md` — dokumentacja edycji (co zawiera, jak zainstalować, architektura)
-- `.github/workflows/build-game.yml` — CI budujący edycję gamingową (push editions/game/**, schedule 05:30 UTC, workflow_dispatch)
+- `.github/workflows/build-game.yml` — CI budujący edycję gamingową (push editions/game/**, schedule 06:00 UTC, workflow_dispatch)
 
 **Pakiety RPM gamingowe (dry-run zweryfikowany w boobsos:latest):**
 
@@ -216,8 +221,7 @@ Warstwa gamingowa na wierzchu `ghcr.io/filip-zienowicz/boobsos:latest` (DRY — 
 | steam-devices | 1.0.0.101^... | OK |
 | wine | 11.0-3.fc44 | POMINIĘTE — 2 GB extra (114 pkg); Lutris zarządza Wine-GE przez ProtonUp-Qt |
 
-**Flatpaki (first-boot, przez usługę z bazy):**
-- `org.onlyoffice.desktopeditors` (z bazy — nie regresujemy)
+**Flatpaki (first-boot, lista gaming-only — nadpisuje listę bazową, bez OnlyOffice):**
 - `com.valvesoftware.Steam`
 - `net.lutris.Lutris`
 - `com.heroicgameslauncher.hgl`
@@ -228,7 +232,7 @@ Warstwa gamingowa na wierzchu `ghcr.io/filip-zienowicz/boobsos:latest` (DRY — 
 **Rebranding:** `PRETTY_NAME="BoobsOS Game"`, `VARIANT="Game"`, `VARIANT_ID=game`. `NAME=BoobsOS` i `ID=boobsos` bez zmian.
 
 **CI (build-game.yml):**
-- Trigger: push na `editions/game/**`, schedule `30 5 * * *` (30 min po bazie), workflow_dispatch
+- Trigger: push na `editions/game/**`, schedule `0 6 * * *` (06:00 UTC, godzinę po bazie), workflow_dispatch
 - Login do ghcr.io PRZED pull bazowego obrazu (GITHUB_TOKEN)
 - Buduje → `ghcr.io/filip-zienowicz/boobsos-game:latest` + SHA tag
 - Zwalnia miejsce na dysku (ten sam wzorzec co build.yml)
@@ -272,14 +276,33 @@ zbudowane i **przetestowane end-to-end** na Proxmox `root@ms01` (VM 105, OVMF/UE
 - **def `boobsos-44.yaml`** trackowany w repo i montowany w build-iso.sh oraz CI
   (bez tego bib nie znajdował def dla `ID=boobsos`).
 
+## F7 — Polish: sidebar logo, gaming, origin, cleanup (ZROBIONE)
+
+Runda dopracowania (4 obszary, praca na subagentach, orchestracja Opus):
+
+1. **Branding instalatora — sidebar logo** — ROZWIĄZANE bez paczki `boobsos-logos`/repo.
+   Pixmapy (`packages/boobsos-anaconda-branding/pixmaps/`: sidebar-logo 150×150, boobsos-logo
+   200×200, sidebar-bg 230×600, topbar-bg 1920×64) wgrywane przez `COPY ... /usr/share/anaconda/pixmaps/`
+   w `Containerfile` (PO late `COPY files/ /`, więc nic ich nie nadpisuje). bib rozpakowuje OCI →
+   Anaconda czyta pixmapy z systemu plików obrazu, bez konfliktu RPM z `fedora-logos`. (weryfikacja: build → ISO → installer screenshot — w toku)
+2. **Gaming edition** — domknięte luki (additywne overlay): czerwony fastfetch
+   (`editions/game/files/etc/fastfetch/config.jsonc`), domyślny MangoHud (skel),
+   `gamemode.ini`, hostname `boobsos-game`. (czerwony motyw, gry, GPU autorebase już były OK)
+3. **Origin auto-update — DECYZJA**: produkcyjny origin = **`ghcr.io`** (publiczny, działa
+   out-of-box, BEZ sekretu w obrazie). GitLab CI buduje jako mirror. Migracja originu na
+   `gitlab.cycr.us:5050` to udokumentowany przyszły krok, ZABLOKOWANY na: (a) upublicznieniu
+   rejestru GitLab, albo (b) scoped read-only deploy-token dostarczonym przez ZABEZPIECZONE ISO.
+   Reguła bezpieczeństwa: NIGDY nie wlepiać pull-secretu do publicznego obrazu. Docs ujednolicone
+   (README, WEBSITE-BRIEF, docs/UPDATES.md).
+4. **Cleanup + hardening**: `.gitignore` (`.claude/`, `insecure-reg.conf` + untrack),
+   hardening skryptów (rebuild-qcow2.sh ścieżka, build-iso.sh komentarz, test-image.sh komentarz),
+   usunięte stare artefakty: `boobsos-dev.iso` (7.8G, ms01), `bib-output/qcow2/disk.qcow2` (11G, fz-vm) + logi.
+
 ## Następne / W toku
+- **Weryfikacja sidebar logo** — przebudowa obrazu dev (CI lub fz-vm) → nowe ISO → boot instalatora
+  → screenshot panelu bocznego (potwierdzić łabędzia zamiast Fedory).
 - **repo.cycx.io** — własny rejestr produkcyjny (w toku); docelowo obrazy migrują z ghcr.io.
-- **Origin auto-update**: ISO testowa wskazuje na `ghcr.io` (publiczny → aktualizacje działają
-  out-of-box). Dla `gitlab.cycr.us:5050` (wewnętrzny, prywatny) trzeba dostarczyć
-  klientom pull-secret (`/etc/ostree/auth.json`) — decyzja wdrożeniowa.
-- **Branding instalatora — sidebar logo** wciąż Fedora; wymaga paczki `boobsos-logos`
-  zastępującej `fedora-logos` (koegzystencja plików nie wystarcza). Tytuł/nazwa już OK.
-- **F7 — Dokumentacja** — rozbudowa docs/index.html, FAQ Gaming, strona edycji Game.
+- **F-docs** — rozbudowa docs/index.html, FAQ Gaming, strona edycji Game.
 
 ## Założenia
 - System dostarczany jako obraz OCI; ISO generowane przez `bootc-image-builder`.
