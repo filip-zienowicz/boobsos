@@ -782,14 +782,13 @@ RUN KUBESEAL_VERSION="0.29.0" \
 # ---------------------------------------------------------------------------
 COPY files/ /
 
-# ---------------------------------------------------------------------------
-# Anaconda installer — pixmapy brandingowe BoobsOS
-#
-# Anaconda czyta te pliki z systemu plików obrazu rozpakowanego przez bib.
-# Nadpisujemy domyślne Fedora pixmapy naszym logo łabędzia i tłem sidebara,
-# żeby panel boczny instalatora pokazywał branding BoobsOS zamiast Fedory.
-# ---------------------------------------------------------------------------
-COPY packages/boobsos-anaconda-branding/pixmaps/ /usr/share/anaconda/pixmaps/
+# UWAGA (zweryfikowane empirycznie 2026-06-18, lokalny boot ISO w QEMU):
+# COPY pixmap do /usr/share/anaconda/pixmaps/ w obrazie OCI NIE zmienia logo
+# w panelu bocznym instalatora. bib buduje OSOBNY installer-tree z listy pakietów
+# (iso/defs/boobsos-44.yaml), gdzie fedora-logos (zależność anaconda) dostarcza
+# sidebar-logo.png — i to ono wygrywa. Branding sidebara wymaga paczki zastępującej
+# fedora-logos w środowisku instalatora (patrz PROGRESS.md "F7 / logo instalatora").
+# Tytuł/nazwa produktu ("BOOBSOS 44 INSTALLATION") działają — z os-release PRETTY_NAME.
 
 # ---------------------------------------------------------------------------
 # Kroki zależne od files/ — po late COPY

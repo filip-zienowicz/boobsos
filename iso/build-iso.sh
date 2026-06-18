@@ -45,16 +45,17 @@ echo ""
 
 mkdir -p "${OUTPUT_DIR}"
 
-# Wykryj czy obraz jest lokalny (localhost/ lub bez rejestru).
-# Warunek: localhost/* — jawna referencja do lokalnego podman storage;
-# !*"."* — krótka nazwa bez hosta (bez kropki), np. "boobsos:dev" → też lokalny.
-# Obrazy zdalne (ghcr.io/..., registry.gitlab... itp.) zawierają zawsze kropkę w hoście.
-LOCAL_FLAG=""
+# Nowsze bootc-image-builder NIE pobiera już obrazów samodzielnie — obraz musi być
+# w lokalnym podman storage, a bib uruchamiany z --local. Dlatego:
+#   - obraz lokalny (localhost/* lub krótka nazwa bez kropki) → tylko --local
+#   - obraz zdalny (ghcr.io/..., registry.gitlab... — host z kropką) → najpierw
+#     `podman pull`, potem także --local (bib czyta z lokalnego storage).
+LOCAL_FLAG="--local"
 if [[ "${IMAGE_REF}" == localhost/* ]] || [[ "${IMAGE_REF}" != *"."* ]]; then
-    LOCAL_FLAG="--local"
-    echo "    Tryb: lokalny obraz (${LOCAL_FLAG})"
+    echo "    Tryb: lokalny obraz (--local)"
 else
-    echo "    Tryb: obraz z rejestru"
+    echo "    Tryb: obraz z rejestru → pre-pull do podman storage"
+    sudo podman pull "${IMAGE_REF}"
 fi
 
 echo "==> Uruchamiam bootc-image-builder..."
