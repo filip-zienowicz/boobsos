@@ -45,7 +45,10 @@ echo ""
 
 mkdir -p "${OUTPUT_DIR}"
 
-# Wykryj czy obraz jest lokalny (localhost/ lub bez rejestru)
+# Wykryj czy obraz jest lokalny (localhost/ lub bez rejestru).
+# Warunek: localhost/* — jawna referencja do lokalnego podman storage;
+# !*"."* — krótka nazwa bez hosta (bez kropki), np. "boobsos:dev" → też lokalny.
+# Obrazy zdalne (ghcr.io/..., registry.gitlab... itp.) zawierają zawsze kropkę w hoście.
 LOCAL_FLAG=""
 if [[ "${IMAGE_REF}" == localhost/* ]] || [[ "${IMAGE_REF}" != *"."* ]]; then
     LOCAL_FLAG="--local"

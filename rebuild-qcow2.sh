@@ -2,7 +2,8 @@
 # rebuild-qcow2.sh — pełny cykl: obraz → warstwa demo → rejestr → storage → qcow2.
 # Używane do iteracji podglądu VM. Wynik: bib-output/qcow2/disk.qcow2.
 set -euo pipefail
-cd /home/fzienowicz/boobsos
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}"
 
 echo ">>> [1/5] build obrazu boobsos:dev"
 DOCKER_BUILDKIT=1 docker build -f Containerfile -t boobsos:dev .

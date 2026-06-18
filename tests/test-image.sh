@@ -8,6 +8,7 @@
 #   ./tests/test-image.sh localhost/boobsos:dev
 #   ./tests/test-image.sh ghcr.io/filip-zienowicz/boobsos:abc1234
 
+# -e jest celowo pominięte: funkcja check() przechwytuje kody wyjścia ręcznie
 set -uo pipefail
 
 IMAGE="${1:-}"

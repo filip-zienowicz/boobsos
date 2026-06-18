@@ -47,3 +47,9 @@ secrets/
 
 # Wynik bib ISO
 iso-output/
+
+# Dane sesji Claude Code (lokalne, nie do repo)
+.claude/
+
+# Lokalna konfiguracja rejestru z insecure access (dev-only, nie commitować)
+insecure-reg.conf
