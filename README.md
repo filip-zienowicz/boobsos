@@ -58,7 +58,7 @@ sudo podman run \
 Jeśli masz zainstalowaną Fedorę Silverblue / Fedorę Atomic, możesz przejść na BoobsOS jedną komendą:
 
 ```bash
-sudo bootc switch ghcr.io/<org>/boobsos:latest
+sudo bootc switch ghcr.io/filip-zienowicz/boobsos:latest
 ```
 
 Po restarcie system uruchomi się jako BoobsOS. Rollback: `sudo bootc rollback`.

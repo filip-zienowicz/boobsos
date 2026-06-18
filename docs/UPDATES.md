@@ -2,13 +2,13 @@
 
 ## Skąd pochodzą aktualizacje
 
-BoobsOS jest oparty na modelu **image-based** (bootc/OCI). Wszystkie składniki aktualizowane są z **własnych zasobów Cycrus** — nie z ghcr.io ani publicznych repozytoriów Fedory.
+BoobsOS jest oparty na modelu **image-based** (bootc/OCI). Obrazy OCI publikowane są publicznie na **GitHub Container Registry (ghcr.io)** — bez potrzeby logowania. CI GitLab buduje obrazy i pushuje je na ghcr.io.
 
-| Składnik | Źródło | Uwagi |
-|----------|--------|-------|
-| Obrazy OCI (system) | `gitlab.cycr.us:5050/fzienowicz/boobsos` | Rejestr self-hosted GitLab |
-| Obraz edycji Game | `gitlab.cycr.us:5050/fzienowicz/boobsos/game` | |
-| Obraz edycji Game (NVIDIA) | `gitlab.cycr.us:5050/fzienowicz/boobsos/game-nvidia` | |
+| Składnik | Źródło (bieżące) | Uwagi |
+|----------|-----------------|-------|
+| Obrazy OCI (system) | `ghcr.io/filip-zienowicz/boobsos` | Publiczny rejestr, bez pull-secret |
+| Obraz edycji Game | `ghcr.io/filip-zienowicz/boobsos-game` | |
+| Obraz edycji Game (NVIDIA) | `ghcr.io/filip-zienowicz/boobsos-game-nvidia` | |
 | Pakiety RPM | `repo.cycx.io/fedora/$releasever/$basearch/` | Skonfigurowane przez `cycrus.repo` |
 
 ---
@@ -19,7 +19,7 @@ BoobsOS jest oparty na modelu **image-based** (bootc/OCI). Wszystkie składniki 
 
 W każdym obrazie BoobsOS włączony jest `bootc-fetch-apply-updates.timer` (usługa systemd). Timer działa w tle:
 
-1. Regularnie sprawdza, czy w rejestrze (`gitlab.cycr.us:5050`) dostępny jest nowy obraz.
+1. Regularnie sprawdza, czy w rejestrze (`ghcr.io`) dostępny jest nowy obraz.
 2. Jeśli tak — pobiera go i przygotowuje do zastosowania.
 3. Przy następnym **restarcie systemu** nowy obraz zostaje aktywowany atomowo.
 
@@ -27,15 +27,15 @@ Nie jest wymagana żadna akcja ze strony użytkownika. Aktualizacje są atomowe 
 
 ### Origin obrazu
 
-Przy instalacji BoobsOS (z ISO lub przez `bootc switch`) origin systemu ustawiany jest na odpowiedni obraz w naszym rejestrze:
+Przy instalacji BoobsOS (z ISO lub przez `bootc switch`) origin systemu ustawiany jest na odpowiedni obraz na ghcr.io:
 
 ```
-gitlab.cycr.us:5050/fzienowicz/boobsos:latest          # edycja DevOps
-gitlab.cycr.us:5050/fzienowicz/boobsos/game:latest     # edycja Game
-gitlab.cycr.us:5050/fzienowicz/boobsos/game-nvidia:latest  # edycja Game + NVIDIA
+ghcr.io/filip-zienowicz/boobsos:latest          # edycja DevOps
+ghcr.io/filip-zienowicz/boobsos-game:latest     # edycja Game
+ghcr.io/filip-zienowicz/boobsos-game-nvidia:latest  # edycja Game + NVIDIA
 ```
 
-Timer i `bootc upgrade` zawsze operują względem tego originu — nie ma możliwości przypadkowego pobrania obrazu z zewnętrznego rejestru.
+Timer i `bootc upgrade` zawsze operują względem tego originu. Rejestr jest publiczny — nie jest wymagane logowanie ani pull-secret.
 
 ---
 
@@ -86,15 +86,9 @@ Polecenie `boobsos-edition switch` wykonuje `bootc switch` do odpowiedniego obra
 
 ## CA — zaufanie do rejestru
 
-Rejestr `gitlab.cycr.us:5050` korzysta z certyfikatu TLS wystawionego przez **SSL2BUY EMEA RSA Domain Validation Secure Server CA** (pośredni CA) oraz root **Sectigo Public Server Authentication Root R46**.
+`ghcr.io` (GitHub Container Registry) korzysta z publicznie zaufanego certyfikatu TLS — nie wymaga żadnego dodatkowego CA anchor po stronie klienta. Standardowy `ca-certificates` w systemie wystarczy.
 
-Root Sectigo R46 jest stosunkowo nowy (2021) i może nie być obecny w starszych wersjach bundla `ca-certificates`. Dlatego oba certyfikaty CA (pośredni + root) są dołączone bezpośrednio do obrazu BoobsOS jako anchor:
-
-```
-/etc/pki/ca-trust/source/anchors/cycr-us-ca.crt
-```
-
-Aktywacja (`update-ca-trust`) jest wykonywana w `Containerfile` podczas budowania obrazu. Dzięki temu każde urządzenie z BoobsOS ufał rejestrowi bez dodatkowej konfiguracji.
+> **Uwaga wewnętrzna:** Rejestr `gitlab.cycr.us:5050` (używany przez CI jako mirror) korzysta z certyfikatu wystawionego przez **SSL2BUY EMEA RSA Domain Validation Secure Server CA** / root **Sectigo Public Server Authentication Root R46**. Certyfikaty CA są dołączone do obrazu jako anchor (`/etc/pki/ca-trust/source/anchors/cycr-us-ca.crt`) na wypadek bezpośredniego dostępu do GitLab registry — nie jest to wymagane przy bieżącym originie ghcr.io.
 
 ---
 
@@ -115,7 +109,7 @@ Repozytorium skonfigurowane jest przez plik `files/etc/yum.repos.d/cycrus.repo` 
 Każdy merge/push do brancha `main` w repozytorium `gitlab.cycr.us/fzienowicz/boobsos` uruchamia pipeline CI GitLab, który:
 
 1. Buduje obraz OCI na podstawie `Containerfile`.
-2. Pushuje nowy obraz do rejestru `gitlab.cycr.us:5050` z tagami `:latest` i SHA commita.
+2. Pushuje nowy obraz do `ghcr.io/filip-zienowicz/boobsos` z tagami `:latest` i SHA commita.
 3. Timer na urządzeniach użytkowników wykrywa nowy digest i pobiera aktualizację.
 
 Buildy planowane (scheduled) uruchamiane są o `05:00 UTC` (edycja DevOps) i `05:30 UTC` (edycje Game), co zapewnia regularne aktualizacje bazowych warstw (upstream UBlue/Fedora).
@@ -125,12 +119,23 @@ Buildy planowane (scheduled) uruchamiane są o `05:00 UTC` (edycja DevOps) i `05
 ## Podsumowanie
 
 ```
-Urządzenie → bootc timer → gitlab.cycr.us:5050 (nasz rejestr) → nowy obraz
+Urządzenie → bootc timer → ghcr.io/filip-zienowicz/boobsos (publiczny) → nowy obraz
                                       ↑
                               CI GitLab (gitlab.cycr.us)
-                              buduje z Containerfile
+                              buduje z Containerfile i pushuje na ghcr.io
 
 Pakiety RPM → repo.cycx.io (nasze repo)
 ```
 
-Żadna aktualizacja nie trafia z zewnętrznych źródeł (ghcr.io, quay.io, Fedora mirrors) — wyłącznie z infrastruktury Cycrus.
+Obrazy OCI pochodzą z `ghcr.io` (publiczny, bez logowania). Pakiety RPM — wyłącznie z infrastruktury Cycrus (`repo.cycx.io`).
+
+---
+
+## Przyszłość / opcja wewnętrzna: migracja originu na GitLab registry
+
+Docelowo możliwa jest zmiana originu na rejestr self-hosted `gitlab.cycr.us:5050`, co pozwoliłoby utrzymać cały łańcuch dystrybucji wewnątrz infrastruktury Cycrus. **Warunek konieczny do spełnienia przed wdrożeniem:**
+
+- **(a)** rejestr GitLab jest publiczny (projekt ustawiony jako „public" lub rejestr dostępny anonimowo), **lub**
+- **(b)** skopowany, niemożliwy do odczytania token z ograniczonymi uprawnieniami (read-only, scoped deploy token) dostarczany jest do urządzeń klienckich za pośrednictwem **zabezpieczonego kanału ISO** (nie public repo, nie publiczny obraz).
+
+**Reguła bezpieczeństwa — bezwzględna:** żaden pull-secret, deploy token ani `glpat-*` nie może być wbudowany w publiczny obraz OCI ani commitowany do publicznego repozytorium. Naruszenie tej zasady skutkuje publicznym ujawnieniem danych uwierzytelniających.

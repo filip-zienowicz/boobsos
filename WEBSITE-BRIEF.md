@@ -135,14 +135,14 @@ Trzy ścieżki — każda nadaje się na blok z komendą do skopiowania:
 1. **Instalacja od zera (ISO):** pobierz ISO → zainstaluj jak każdy system (instalator Anaconda).
 2. **Rebase z istniejącej Fedory Atomic** (Silverblue/Kinoite/Bazzite itp.):
    ```bash
-   sudo bootc switch ghcr.io/<org>/boobsos:latest
+   sudo bootc switch ghcr.io/filip-zienowicz/boobsos:latest
    ```
    restart → system działa jako BoobsOS.
 3. **Wypróbuj w VM:** wygeneruj qcow2/ISO przez `bootc-image-builder`, odpal w QEMU/virt-manager.
 
 Aktualizacja: `sudo bootc upgrade` · Cofnięcie: `sudo bootc rollback`.
 
-> Uwaga dla web-agenta: `ghcr.io/<org>/boobsos` i `boobsos.example.com` to **placeholdery** — finalna domena/rejestr GitLab do podstawienia, gdy będą znane. Hosting kodu i obrazów: **GitLab** (rejestr + CI).
+> Hosting kodu: **GitLab** (gitlab.cycr.us/fzienowicz/boobsos). Obrazy publikowane na `ghcr.io/filip-zienowicz/boobsos` (publiczne, bez logowania). CI GitLab buduje obrazy i mirroruje na ghcr.io.
 
 ---
 
