@@ -783,6 +783,15 @@ RUN KUBESEAL_VERSION="0.29.0" \
 COPY files/ /
 
 # ---------------------------------------------------------------------------
+# Anaconda installer — pixmapy brandingowe BoobsOS
+#
+# Anaconda czyta te pliki z systemu plików obrazu rozpakowanego przez bib.
+# Nadpisujemy domyślne Fedora pixmapy naszym logo łabędzia i tłem sidebara,
+# żeby panel boczny instalatora pokazywał branding BoobsOS zamiast Fedory.
+# ---------------------------------------------------------------------------
+COPY packages/boobsos-anaconda-branding/pixmaps/ /usr/share/anaconda/pixmaps/
+
+# ---------------------------------------------------------------------------
 # Kroki zależne od files/ — po late COPY
 # ---------------------------------------------------------------------------
 
