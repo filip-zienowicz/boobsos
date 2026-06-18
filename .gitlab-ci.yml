@@ -104,6 +104,11 @@ build-iso:
     # Obraz ma os-release ID=boobsos VERSION_ID=44 → bib szuka defs/boobsos-44.yaml.
     # Brak wbudowanego → wstrzykujemy nasz (treść == fedora-40.yaml: pakiety instalatora).
     - install -m0644 iso/defs/boobsos-44.yaml /usr/share/bootc-image-builder/defs/boobsos-44.yaml
+    # Repo boobsos-logos pod ścieżką baseurl z files/etc/yum.repos.d/boobsos-logos.repo.
+    # bib depsolve'uje z repo obrazu (definicja stamtąd), ale file:// rozwiązuje we własnym
+    # kontekście (tu = ten kontener joba), więc kopiujemy pliki repo na docelową ścieżkę.
+    - mkdir -p /usr/share/boobsos-logos-repo
+    - cp -a packages/boobsos-logos-repo/. /usr/share/boobsos-logos-repo/
     - |
       bootc-image-builder \
         --type anaconda-iso \

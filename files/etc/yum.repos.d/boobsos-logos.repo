@@ -1,0 +1,16 @@
+# boobsos-logos — lokalne repo w obrazie z paczką brandingu instalatora.
+#
+# Cel: bib (bootc-image-builder) przy budowie ISO depsolve'uje pakiety installer-tree
+# z repozytoriów TARGET IMAGE, więc ta definicja sprawia, że dnf widzi boobsos-logos
+# (Obsoletes/Conflicts fedora-logos) i instaluje NASZ pakiet do środowiska instalatora
+# → panel boczny Anacondy pokazuje logo łabędzia BoobsOS zamiast Fedory.
+#
+# Pliki repo (RPM + repodata) są wbudowane w obraz pod /usr/share/boobsos-logos-repo
+# (COPY w Containerfile), a przy buildzie ISO montowane do kontenera bib pod tą samą
+# ścieżką (build-iso.sh / CI) — bo depsolver bib nie chrootuje do obrazu.
+[boobsos-logos]
+name=BoobsOS logos (in-image)
+baseurl=file:///usr/share/boobsos-logos-repo
+enabled=1
+gpgcheck=0
+priority=1

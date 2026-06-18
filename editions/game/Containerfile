@@ -185,6 +185,10 @@ COPY files/ /
 # ---------------------------------------------------------------------------
 COPY editions/game/files/ /
 
+# Branding instalatora — repo boobsos-logos (jak w edycji dev; .repo z files/ wskazuje tu).
+# Trzyma repo spójnym w obrazie game (gdyby budowano dla niego ISO) i waliduje runtime.
+COPY packages/boobsos-logos-repo /usr/share/boobsos-logos-repo
+
 # ---------------------------------------------------------------------------
 # Kroki zależne od files/ — po late COPY
 # ---------------------------------------------------------------------------

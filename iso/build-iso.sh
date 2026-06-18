@@ -58,6 +58,14 @@ else
     sudo podman pull "${IMAGE_REF}"
 fi
 
+# Lokalne repo boobsos-logos dla depsolve instalatora.
+# Mechanizm (zweryfikowany): bib depsolve'uje pakiety installer-tree z repo TARGET IMAGE
+# (czyta /etc/yum.repos.d z obrazu — w tym nasz boobsos-logos.repo z baseurl=file://...),
+# ale pliki repo rozwiązuje we WŁASNYM kontekście (nie chroot do obrazu). Dlatego montujemy
+# katalog repo pod tą samą ścieżką baseurl, żeby file:// było czytelne dla depsolvera.
+# boobsos-logos Obsoletes/Conflicts fedora-logos → instalator dostaje nasze logo w sidebarze.
+LOGOS_REPO="${REPO_ROOT}/packages/boobsos-logos-repo"
+
 echo "==> Uruchamiam bootc-image-builder..."
 sudo podman run \
     --rm \
@@ -65,6 +73,7 @@ sudo podman run \
     --security-opt label=type:unconfined_t \
     -v "${CONFIG_FILE}:/config.toml:ro" \
     -v "${DEFS_FILE}:/usr/share/bootc-image-builder/defs/boobsos-44.yaml:ro" \
+    -v "${LOGOS_REPO}:/usr/share/boobsos-logos-repo:ro" \
     -v "${OUTPUT_DIR}:/output" \
     -v /var/lib/containers/storage:/var/lib/containers/storage \
     "${BIB_IMAGE}" \

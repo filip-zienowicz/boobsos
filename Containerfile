@@ -782,13 +782,17 @@ RUN KUBESEAL_VERSION="0.29.0" \
 # ---------------------------------------------------------------------------
 COPY files/ /
 
-# UWAGA (zweryfikowane empirycznie 2026-06-18, lokalny boot ISO w QEMU):
-# COPY pixmap do /usr/share/anaconda/pixmaps/ w obrazie OCI NIE zmienia logo
-# w panelu bocznym instalatora. bib buduje OSOBNY installer-tree z listy pakietów
-# (iso/defs/boobsos-44.yaml), gdzie fedora-logos (zależność anaconda) dostarcza
-# sidebar-logo.png — i to ono wygrywa. Branding sidebara wymaga paczki zastępującej
-# fedora-logos w środowisku instalatora (patrz PROGRESS.md "F7 / logo instalatora").
-# Tytuł/nazwa produktu ("BOOBSOS 44 INSTALLATION") działają — z os-release PRETTY_NAME.
+# ---------------------------------------------------------------------------
+# Branding instalatora — lokalne repo boobsos-logos (ROZWIĄZANE 2026-06-18).
+#
+# bib depsolve'uje pakiety installer-tree z repozytoriów TARGET IMAGE. Wbudowujemy
+# tu repo z paczką boobsos-logos (fork fedora-logos z naszym logo w sidebarze,
+# Obsoletes/Conflicts fedora-logos). Razem z files/etc/yum.repos.d/boobsos-logos.repo
+# i wpisem boobsos-logos w iso/defs/boobsos-44.yaml → instalator pokazuje łabędzia.
+# (COPY pixmap bezpośrednio do /usr/share/anaconda/pixmaps NIE działa — installer-tree
+# jest osobnym środowiskiem; patrz PROGRESS.md "F7 / logo instalatora").
+# ---------------------------------------------------------------------------
+COPY packages/boobsos-logos-repo /usr/share/boobsos-logos-repo
 
 # ---------------------------------------------------------------------------
 # Kroki zależne od files/ — po late COPY

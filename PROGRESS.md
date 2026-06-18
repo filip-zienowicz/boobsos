@@ -280,17 +280,22 @@ zbudowane i **przetestowane end-to-end** na Proxmox `root@ms01` (VM 105, OVMF/UE
 
 Runda dopracowania (4 obszary, praca na subagentach, orchestracja Opus):
 
-1. **Branding instalatora — sidebar logo** — PRÓBA COPY NIEUDANA (zweryfikowane empirycznie).
-   Wgrałem pixmapy przez `COPY ... /usr/share/anaconda/pixmaps/` do obrazu OCI i przetestowałem
-   pełny pipeline: push → CI build dev → `podman pull` → `build-iso.sh` → **lokalny boot ISO w QEMU**
-   (fz-vm, OVMF, screendump przez monitor). Wynik: tytuł **„BOOBSOS 44 INSTALLATION" działa** (z
-   `PRETTY_NAME`), ale **panel boczny WCIĄŻ pokazuje logo Fedory**. Pixmapy SĄ w obrazie OCI, ale
-   bib buduje OSOBNY installer-tree z listy pakietów (`iso/defs/boobsos-44.yaml`), gdzie `fedora-logos`
-   (zależność `anaconda`) dostarcza `sidebar-logo.png` — i ono wygrywa. COPY cofnięty (no-op dla
-   instalatora). **Właściwy fix** = paczka `boobsos-logos` z `Provides: system-logos` +
-   `Obsoletes/Conflicts: fedora-logos`, opublikowana w repo dostępnym dla bib (repo.cycx.io) i dodana
-   do `boobsos-44.yaml`. Ryzyko: minimalna paczka łamie installer (fedora-logos dostarcza też grub/
-   bootloader art) — bezpieczna wersja to pełny fork artworku fedora-logos. DECYZJA do podjęcia.
+1. **Branding instalatora — sidebar logo** — ✅ ROZWIĄZANE i zweryfikowane (boot ISO w QEMU).
+   Droga przez `COPY` pixmap do obrazu OCI NIE działa (zweryfikowane: pixmapy są w obrazie, ale
+   instalator wciąż Fedora — bib buduje OSOBNY installer-tree). Działające rozwiązanie:
+   - **Paczka `boobsos-logos`** (`packages/boobsos-logos/`): fork `fedora-logos` (wszystkie pliki, by
+     nie łamać zależności), z podmienionym `sidebar-logo.png` na łabędzia. `Provides: system-logos`
+     (+ fedora-logos/gnome-logos/redhat-logos), `Obsoletes`/`Conflicts: fedora-logos`. Build:
+     `bash packages/boobsos-logos/build.sh` (forkuje fedora-logos w kontenerze fedora:44).
+   - **Mechanizm dostarczenia do bib (kluczowy, odkryty empirycznie):** bib depsolve'uje pakiety
+     installer-tree z repozytoriów TARGET IMAGE (`/etc/yum.repos.d` w obrazie), ALE file:// rozwiązuje
+     we WŁASNYM kontekście (nie chrootuje do obrazu). Dlatego: (a) obraz dostarcza definicję repo
+     `files/etc/yum.repos.d/boobsos-logos.repo` (baseurl=file:///usr/share/boobsos-logos-repo) +
+     wbudowane repo `COPY packages/boobsos-logos-repo /usr/share/boobsos-logos-repo` (walidacja runtime);
+     (b) przy buildzie ISO repo jest montowane/kopiowane do kontenera bib pod tą samą ścieżką
+     (`build-iso.sh` mount; `.gitlab-ci.yml` cp). (c) `boobsos-logos` dodany do `iso/defs/boobsos-44.yaml`.
+   - **Wynik (QEMU, fz-vm):** panel boczny instalatora pokazuje logo łabędzia BoobsOS + gradient marki.
+     Tytuł „BOOBSOS 44 INSTALLATION" też nasz. Pełny branding instalatora. BEZ repo.cycx.io, BEZ sekretów.
 2. **Gaming edition** — domknięte luki (additywne overlay): czerwony fastfetch
    (`editions/game/files/etc/fastfetch/config.jsonc`), domyślny MangoHud (skel),
    `gamemode.ini`, hostname `boobsos-game`. (czerwony motyw, gry, GPU autorebase już były OK)

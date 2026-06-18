@@ -1,5 +1,9 @@
 anaconda-iso:
   packages:
+    # boobsos-logos — fork fedora-logos z naszym logo w pasku bocznym instalatora.
+    # Provides system-logos + Obsoletes/Conflicts fedora-logos → dnf instaluje nasz
+    # pakiet zamiast fedora-logos w środowisku instalatora (z lokalnego repo zamontowanego do bib).
+    - boobsos-logos
     - aajohan-comfortaa-fonts
     - abattis-cantarell-fonts
     - alsa-firmware
