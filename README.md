@@ -166,12 +166,21 @@ curl -LO https://repo.cycx.io/iso/SHA256SUMS && sha256sum -c SHA256SUMS
 
 ### Instalacja edycji Game
 
+Z istniejącej Fedory Atomic:
+
 ```bash
 # AMD/Intel (domyślny wariant — mesa, otwarte sterowniki):
 sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game:latest
 
 # NVIDIA (preinstalowane akmod-nvidia):
 sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game-nvidia:latest
+```
+
+Od zera — ISO edycji Game (czerwona; auto-detekcja GPU rebase'uje na NVIDIA przy 1. boocie):
+
+```bash
+curl -LO https://repo.cycx.io/iso/boobsos-game-44.iso
+curl -LO https://repo.cycx.io/iso/SHA256SUMS && sha256sum -c SHA256SUMS
 ```
 
 Po restarcie usługa `boobsos-firstboot-flatpaks` zainstaluje Steam, Lutris, Heroic, ProtonUp-Qt, Discord i OBS Studio.

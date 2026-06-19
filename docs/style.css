@@ -702,6 +702,13 @@ img { display: block; }
   font-family: var(--font-mono);
 }
 
+.install-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-top: 1rem;
+}
+
 .install-badge {
   position: absolute;
   top: 1.25rem;
