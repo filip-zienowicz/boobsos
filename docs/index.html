@@ -730,7 +730,24 @@
               <li><code>sudo ostree admin status</code> — zobacz oba (index 0 i 1)</li>
               <li><code>sudo ostree admin pin 0 &amp;&amp; sudo ostree admin pin 1</code></li>
             </ul>
-            <p>Od teraz GRUB pokazuje oba wpisy. Dzielą wspólny <code>/home</code> i <code>/var</code>; każdy aktualizujesz osobno przez <code>sudo bootc upgrade</code> po wejściu w daną edycję.</p>
+            <p>Od teraz GRUB pokazuje oba wpisy — rozróżnisz je po nazwie: <strong>„BoobsOS"</strong> (DevOps) i <strong>„BoobsOS Game"</strong>. Dzielą wspólny <code>/home</code> i <code>/var</code>; każdy aktualizujesz osobno przez <code>sudo bootc upgrade</code> po wejściu w daną edycję.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="faq-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+            Czy moje programy i dane przetrwają przełączenie edycji?
+          </summary>
+          <div class="faq-answer">
+            <p><strong>Tak.</strong> W modelu bootc/ostree <code>/home</code> i <code>/var</code> to wspólny stateroot — są zachowane przy przełączeniu i <em>współdzielone</em> między edycjami. Wszystko zainstalowane zalecanymi metodami „idzie za Tobą”:</p>
+            <ul>
+              <li><strong>Flatpaki</strong> (Flathub) — w <code>/var/lib/flatpak</code></li>
+              <li><strong>Homebrew</strong> — w przestrzeni użytkownika</li>
+              <li><strong>Kontenery / Distrobox</strong> — w <code>/home</code> i <code>/var</code></li>
+              <li><strong>Pliki, configi, dotfiles</strong> — w <code>/home</code></li>
+            </ul>
+            <p>Jedyne, co NIE przetrwa przełączenia, to pakiety nałożone bezpośrednio na obraz systemu (<code>rpm-ostree</code>/bootc layering) — bo wchodzisz na inny obraz. Dlatego zalecamy flatpak / brew / kontenery (i tak są domyślne). W GRUB-ie wpisy są podpisane <strong>„BoobsOS"</strong> i <strong>„BoobsOS Game"</strong>, więc nie pomylisz edycji.</p>
           </div>
         </details>
 
