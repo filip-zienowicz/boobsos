@@ -578,9 +578,50 @@
           </div>
         </div>
 
+      <div class="install-path">
+          <div class="install-path-header">
+            <span class="install-path-num">5</span>
+            <div>
+              <h3>Obie edycje na jednym dysku</h3>
+              <p>BoobsOS jest obrazowy (bootc/ostree) — „dwie wersje na dysku” robi się inaczej niż klasyczny dual-boot. Dwie drogi:</p>
+            </div>
+          </div>
+          <div class="terminal">
+            <div class="terminal-bar" aria-hidden="true">
+              <span class="terminal-dot terminal-dot--red"></span>
+              <span class="terminal-dot terminal-dot--yellow"></span>
+              <span class="terminal-dot terminal-dot--green"></span>
+              <span class="terminal-title">terminal</span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line terminal-comment"># A) PRZEŁĄCZANIE — jedna naraz, wspólny /home (najprostsze)</div>
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span>
+                <code>boobsos-edition switch game --apply</code>
+              </div>
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span>
+                <code>boobsos-edition switch dev --apply</code>
+              </div>
+              <div class="terminal-line terminal-comment"># B) OBIE NARAZ — wybór w GRUB przy starcie (wspólny /home i /var)</div>
+              <div class="terminal-line terminal-comment"># z zainstalowanej edycji dev twórz drugi deployment:</div>
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span>
+                <code>sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game:latest</code>
+              </div>
+              <div class="terminal-line terminal-comment"># przypnij oba, by aktualizacje ich nie usunęły:</div>
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span>
+                <code>sudo ostree admin status &amp;&amp; sudo ostree admin pin 0 &amp;&amp; sudo ostree admin pin 1</code>
+              </div>
+              <div class="terminal-line terminal-comment"># od teraz GRUB pokazuje oba wpisy — wybierasz przy boocie</div>
+            </div>
+          </div>
+        </div>
+
       <div class="install-note">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Wszystkie obrazy (<code>boobsos</code>, <code>boobsos-game</code>, <code>boobsos-game-nvidia</code>) są publiczne na <code>ghcr.io</code> — nie potrzebujesz logowania, żeby je pobrać.
+        Wszystkie obrazy (<code>boobsos</code>, <code>boobsos-game</code>, <code>boobsos-game-nvidia</code>) są publiczne na <code>ghcr.io</code> — nie potrzebujesz logowania, żeby je pobrać. ISO: <a href="https://repo.cycx.io/iso/">repo.cycx.io/iso</a>.
       </div>
     </div>
   </section>
@@ -658,6 +699,54 @@
           </summary>
           <div class="faq-answer">
             <p>Przymrużenie oka — bo dlaczego nie? Produkt jest poważny, nazwa nie musi być. Jeśli to nie Twój klimat, sam Containerfile jest dostępny i możesz zbudować własną dystrybucję pod swoją nazwą.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="faq-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+            Jak przełączać się między edycją DevOps a Game?
+          </summary>
+          <div class="faq-answer">
+            <p>Jednym poleceniem, bez reinstalacji — <code>/home</code> zostaje nietknięty:</p>
+            <ul>
+              <li><code>boobsos-edition switch game --apply</code> — przełącz na gaming i zrestartuj</li>
+              <li><code>boobsos-edition switch dev --apply</code> — wróć na DevOps</li>
+              <li><code>boobsos-edition status</code> — sprawdź aktualną edycję</li>
+            </ul>
+            <p>Edycja Game sama wykrywa GPU NVIDIA i przechodzi na wariant z zamkniętymi sterownikami przy pierwszym boocie. Szczegóły w sekcji <a href="#install">Instalacja</a>.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="faq-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+            Czy mogę mieć obie edycje na jednym dysku?
+          </summary>
+          <div class="faq-answer">
+            <p>Tak. Najprościej — <strong>przełączać się</strong> (<code>boobsos-edition switch</code>): jedna aktywna naraz, wspólny <code>/home</code>.</p>
+            <p>Jeśli chcesz <strong>obie zainstalowane i wybierać przy starcie w GRUB</strong>: z edycji dev odpal <code>sudo bootc switch ghcr.io/filip-zienowicz/boobsos-game:latest</code>, a potem przypnij oba deploymenty, by aktualizacje ich nie usunęły:</p>
+            <ul>
+              <li><code>sudo ostree admin status</code> — zobacz oba (index 0 i 1)</li>
+              <li><code>sudo ostree admin pin 0 &amp;&amp; sudo ostree admin pin 1</code></li>
+            </ul>
+            <p>Od teraz GRUB pokazuje oba wpisy. Dzielą wspólny <code>/home</code> i <code>/var</code>; każdy aktualizujesz osobno przez <code>sudo bootc upgrade</code> po wejściu w daną edycję.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="faq-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+            Skąd pobrać ISO instalacyjne?
+          </summary>
+          <div class="faq-answer">
+            <p>Z <a href="https://repo.cycx.io/iso/" target="_blank" rel="noopener">repo.cycx.io/iso</a> (z brandingiem instalatora BoobsOS):</p>
+            <ul>
+              <li><a href="https://repo.cycx.io/iso/boobsos-dev-44.iso">boobsos-dev-44.iso</a> — edycja DevOps (8.3&nbsp;GB)</li>
+              <li><a href="https://repo.cycx.io/iso/boobsos-game-44.iso">boobsos-game-44.iso</a> — edycja Game (4.9&nbsp;GB)</li>
+              <li><a href="https://repo.cycx.io/iso/SHA256SUMS">SHA256SUMS</a> — weryfikacja: <code>sha256sum -c SHA256SUMS</code></li>
+            </ul>
+            <p>Nie masz jeszcze systemu? Pobierz ISO i zainstaluj przez instalator Anaconda. Masz już Fedorę Atomic? Użyj <code>bootc switch</code> bez reinstalacji — patrz sekcja <a href="#install">Instalacja</a>.</p>
           </div>
         </details>
 
