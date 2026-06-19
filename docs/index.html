@@ -489,11 +489,19 @@
               <span class="terminal-title">terminal</span>
             </div>
             <div class="terminal-body">
-              <div class="terminal-line terminal-comment"># ISO instalator — wkrótce dostępny</div>
-              <div class="terminal-line terminal-comment"># Śledź repo GitHub żeby nie przegapić</div>
+              <div class="terminal-line terminal-comment"># pobierz ISO (edycja DevOps, x86_64)</div>
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span>
+                <code>curl -LO https://repo.cycx.io/iso/boobsos-dev-44.iso</code>
+              </div>
+              <div class="terminal-line terminal-comment"># zweryfikuj sumę kontrolną SHA-256</div>
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span>
+                <code>curl -LO https://repo.cycx.io/iso/SHA256SUMS &amp;&amp; sha256sum -c SHA256SUMS</code>
+              </div>
             </div>
           </div>
-          <div class="install-badge">Wkrótce</div>
+          <a href="https://repo.cycx.io/iso/boobsos-dev-44.iso" class="btn btn-primary" download>Pobierz ISO (8.3 GB)</a>
         </div>
 
         <div class="install-path">

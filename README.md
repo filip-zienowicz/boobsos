@@ -150,8 +150,18 @@ Jeden Containerfile (`editions/game/Containerfile`) budowany z `ARG BASE_IMAGE` 
 
 ### Instalacja edycji BoobsOS (DevOps)
 
+Z istniejącej Fedory Atomic (bez reinstalacji):
+
 ```bash
 sudo bootc switch ghcr.io/filip-zienowicz/boobsos:latest
+```
+
+Od zera — pobierz ISO (instalator Anaconda z brandingiem BoobsOS):
+
+```bash
+curl -LO https://repo.cycx.io/iso/boobsos-dev-44.iso
+# weryfikacja sumy kontrolnej:
+curl -LO https://repo.cycx.io/iso/SHA256SUMS && sha256sum -c SHA256SUMS
 ```
 
 ### Instalacja edycji Game
