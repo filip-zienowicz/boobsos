@@ -5,7 +5,7 @@
 #   bash iso/build-iso.sh [IMAGE_REF]
 #
 # IMAGE_REF — referencja do obrazu OCI BoobsOS, np.:
-#   registry.gitlab.cycr.us/fzienowicz/boobsos:latest
+#   ghcr.io/filip-zienowicz/boobsos:latest
 #   localhost/boobsos:dev   (domyślne — lokalny obraz w podman storage)
 #
 # Wynik: iso-output/bootiso/install.iso
@@ -48,7 +48,7 @@ mkdir -p "${OUTPUT_DIR}"
 # Nowsze bootc-image-builder NIE pobiera już obrazów samodzielnie — obraz musi być
 # w lokalnym podman storage, a bib uruchamiany z --local. Dlatego:
 #   - obraz lokalny (localhost/* lub krótka nazwa bez kropki) → tylko --local
-#   - obraz zdalny (ghcr.io/..., registry.gitlab... — host z kropką) → najpierw
+#   - obraz zdalny (ghcr.io/filip-zienowicz/boobsos:latest — host z kropką) → najpierw
 #     `podman pull`, potem także --local (bib czyta z lokalnego storage).
 LOCAL_FLAG="--local"
 if [[ "${IMAGE_REF}" == localhost/* ]] || [[ "${IMAGE_REF}" != *"."* ]]; then

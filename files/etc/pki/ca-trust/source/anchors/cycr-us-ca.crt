@@ -1,4 +1,8 @@
-# CA chain dla registry.gitlab.cycr.us (rejestr obrazów OCI BoobsOS)
+# CA chain dla repo.cycx.io (host pobierania ISO/artefaktów BoobsOS)
+#
+# (Historycznie obejmował też self-hosted rejestr gitlab.cycr.us — wycofany na
+#  rzecz ghcr.io. Anchor zostaje, bo repo.cycx.io używa tego samego łańcucha
+#  SSL2BUY/Sectigo.)
 #
 # Łańcuch: *.cycr.us (liść)
 #   → SSL2BUY EMEA RSA Domain Validation Secure Server CA (pośredni CA)
@@ -12,7 +16,7 @@
 # Root CA jest nowszy (2021) i może nie być w starszych bundlach ca-certificates
 # Fedory/UBlue — dlatego dołączony jawnie jako anchor.
 # update-ca-trust wywoływane jest w Containerfile przez orkiestratora.
-# Źródło łańcucha: openssl s_client + AIA z certyfikatu serwera gitlab.cycr.us:443
+# Źródło łańcucha: openssl s_client + AIA z certyfikatu serwera (SSL2BUY/Sectigo)
 #
 
 # Pośredni CA: SSL2BUY EMEA RSA Domain Validation Secure Server CA

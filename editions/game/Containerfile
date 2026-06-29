@@ -43,7 +43,7 @@ COPY files/etc/yum.repos.d/ /etc/yum.repos.d/
 COPY files/etc/dnf/ /etc/dnf/
 COPY files/etc/pki/ca-trust/source/anchors/ /etc/pki/ca-trust/source/anchors/
 
-# Aktywuj zaufane CA (registry.gitlab.cycr.us + repo.cycx.io) z anchora w files/
+# Aktywuj zaufane CA (repo.cycx.io — host pobierania ISO/artefaktów) z anchora w files/
 RUN update-ca-trust 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
@@ -61,7 +61,7 @@ RUN sed -i \
         -e 's|^HOME_URL=.*|HOME_URL="https://boobsos.example.com"|' \
         -e 's|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://boobsos.example.com/docs"|' \
         -e 's|^SUPPORT_URL=.*|SUPPORT_URL="https://boobsos.example.com/support"|' \
-        -e 's|^BUG_REPORT_URL=.*|BUG_REPORT_URL="https://gitlab.example.com/boobsos/boobsos/-/issues"|' \
+        -e 's|^BUG_REPORT_URL=.*|BUG_REPORT_URL="https://github.com/filip-zienowicz/boobsos/issues"|' \
         -e 's|^CPE_NAME=.*|CPE_NAME="cpe:/o:boobsos:boobsos:44"|' \
         /usr/lib/os-release \
     && grep -q '^CPE_NAME=' /usr/lib/os-release \

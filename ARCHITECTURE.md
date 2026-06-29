@@ -77,7 +77,7 @@ Dokładnie nasz przypadek użycia. Opcje startu:
 
 1. **Środowisko graficzne: GNOME.** Wayland, flagowiec Fedory, najmniej utrzymania, najłatwiej spójnie obrandować. KDE jako ewentualny spin w przyszłości.
 2. **Baza obrazu: Universal Blue `silverblue-main` (GNOME).** Fedora Atomic z pełnym GNOME + GDM, rozwiązanymi kodekami/sterownikami/akmods, bez ich brandingu. `FROM ghcr.io/ublue-os/silverblue-main:latest`. UWAGA: `base-main` jest HEADLESS (bez DE) — dlatego dla desktopu używamy `silverblue-main`. KDE = `kinoite-main`. Zamiana = jedna linijka.
-3. **Hosting/CI: GitLab** (rejestr + GitLab CI), spójnie z `cycrus-ksef`.
+3. **Hosting/CI: GitHub** (rejestr ghcr.io + GitHub Actions), repo: `github.com/filip-zienowicz/boobsos`.
 
 ## Roadmap (fazy)
 

@@ -25,7 +25,7 @@ bash iso/build-iso.sh localhost/boobsos:dev
 ### Z rejestru
 
 ```bash
-bash iso/build-iso.sh registry.gitlab.cycr.us/fzienowicz/boobsos:latest
+bash iso/build-iso.sh ghcr.io/filip-zienowicz/boobsos:latest
 ```
 
 ### Domyślne wywołanie (localhost/boobsos:dev)

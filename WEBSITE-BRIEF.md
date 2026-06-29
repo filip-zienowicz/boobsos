@@ -142,7 +142,7 @@ Trzy ścieżki — każda nadaje się na blok z komendą do skopiowania:
 
 Aktualizacja: `sudo bootc upgrade` · Cofnięcie: `sudo bootc rollback`.
 
-> Hosting kodu: **GitLab** (gitlab.cycr.us/fzienowicz/boobsos). Obrazy publikowane na `ghcr.io/filip-zienowicz/boobsos` (publiczne, bez logowania). CI GitLab buduje obrazy i mirroruje na ghcr.io.
+> Hosting kodu: **GitHub** (github.com/filip-zienowicz/boobsos). Obrazy publikowane na `ghcr.io/filip-zienowicz/boobsos` (publiczne, bez logowania). CI GitHub Actions buduje i publikuje obrazy na ghcr.io.
 
 ---
 
@@ -158,20 +158,20 @@ Aktualizacja: `sudo bootc upgrade` · Cofnięcie: `sudo bootc rollback`.
 | F5 | Generowanie ISO, test w VM | planowane |
 | F6 | Dokumentacja użytkownika | planowane |
 
-Projekt jest **we wczesnej fazie** — strona może mieć status „early access / w budowie" i CTA do zapisu na listę / repo GitLab.
+Projekt jest **we wczesnej fazie** — strona może mieć status „early access / w budowie" i CTA do zapisu na listę / repo GitHub.
 
 ---
 
 ## 9. Sugerowana struktura strony (dla agenta)
 
-1. **Hero** — logo, nazwa, tagline, gradient marki, dwa CTA: „Pobierz / Wypróbuj" + „Zobacz na GitLab". Tło: ciemne z gradientem niebiesko-fioletowym.
+1. **Hero** — logo, nazwa, tagline, gradient marki, dwa CTA: „Pobierz / Wypróbuj" + „Zobacz na GitHub". Tło: ciemne z gradientem niebiesko-fioletowym.
 2. **Dlaczego BoobsOS** — 3–6 kafli z value props (sekcja 4).
 3. **Jak to działa** — diagram przepływu bootc (sekcja 5), wyjaśnienie atomowości i rollbacku.
 4. **Co jest z pudełka** — siatka kategorii narzędzi z ikonami (sekcja 6). Mocny punkt wizualny.
 5. **Get started** — trzy ścieżki instalacji z blokami komend do kopiowania (sekcja 7).
 6. **Roadmap / status** — tabela faz (sekcja 8).
 7. **FAQ** — zalążki niżej.
-8. **Stopka** — link GitLab, licencja, „zbudowane na Fedorze / bootc".
+8. **Stopka** — link GitHub, licencja, „zbudowane na Fedorze / bootc".
 
 Elementy wizualne, które pasują: bloki terminala z komendami (mono font, kropki okna),
 animowany gradient w hero, „chip"/heksagon jako motyw przewodni (z logo), ciemny motyw z neonowo-niebieskimi akcentami.

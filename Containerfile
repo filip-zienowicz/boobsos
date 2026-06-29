@@ -16,7 +16,7 @@ COPY files/etc/yum.repos.d/ /etc/yum.repos.d/
 COPY files/etc/dnf/ /etc/dnf/
 COPY files/etc/pki/ca-trust/source/anchors/ /etc/pki/ca-trust/source/anchors/
 
-# Aktywuj zaufane CA (registry.gitlab.cycr.us + repo.cycx.io) z anchora
+# Aktywuj zaufane CA (repo.cycx.io — host pobierania ISO/artefaktów) z anchora
 RUN update-ca-trust 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
@@ -37,7 +37,7 @@ RUN sed -i \
         -e 's|^HOME_URL=.*|HOME_URL="https://boobsos.example.com"|' \
         -e 's|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://boobsos.example.com/docs"|' \
         -e 's|^SUPPORT_URL=.*|SUPPORT_URL="https://boobsos.example.com/support"|' \
-        -e 's|^BUG_REPORT_URL=.*|BUG_REPORT_URL="https://gitlab.example.com/boobsos/boobsos/-/issues"|' \
+        -e 's|^BUG_REPORT_URL=.*|BUG_REPORT_URL="https://github.com/filip-zienowicz/boobsos/issues"|' \
         -e 's|^CPE_NAME=.*|CPE_NAME="cpe:/o:boobsos:boobsos:44"|' \
         /usr/lib/os-release \
     && grep -E '^(NAME|PRETTY_NAME|ID|ID_LIKE)' /usr/lib/os-release \
@@ -492,7 +492,7 @@ RUN systemctl enable firewalld.service \
 # Auto-aktualizacje BoobsOS (bootc)
 #
 # Timer bootc co jakiś czas sprawdza rejestr, z którego zainstalowano system
-# (origin = registry.gitlab.cycr.us/fzienowicz/boobsos), pobiera nowy obraz
+# (origin = ghcr.io/filip-zienowicz/boobsos), pobiera nowy obraz
 # BoobsOS i stosuje go atomowo przy następnym restarcie. To AKTUALIZACJE BoobsOS,
 # nie Fedory — Fedora to tylko baza zapieczona w naszym obrazie.
 # W bazie timer jest 'disabled' — włączamy go, by użytkownicy dostawali update'y.

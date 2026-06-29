@@ -11,6 +11,7 @@ Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śl
 - **boobsos-edition** — narzędzie do przełączania edycji: `status` / `list` / `switch dev` / `switch game`. Wykonuje `bootc switch` + restart, `/home` współdzielone między edycjami.
 - **Auto-rebase GPU (boobsos-gpu-autorebase)** — usługa first-boot wykrywa kartę NVIDIA w wariancie mesa i automatycznie przełącza na `boobsos-game-nvidia:latest`.
 - **CI GitHub Actions + ghcr.io** — `build.yml` (boobsos:latest, schedule 05:00 UTC), `build-game.yml` (boobsos-game + boobsos-game-nvidia, matrix, schedule 06:00 UTC). Obrazy publiczne na `ghcr.io`.
+- **Migracja hosting GitLab → GitHub (czerwiec 2026)** — kod, CI i origin obrazów przeniesione z self-hosted `gitlab.cycr.us` na `github.com/filip-zienowicz/boobsos` (Actions) + `ghcr.io`. Usunięte: `.gitlab-ci.yml`, remote `gitlab`. Wycofany rejestr `gitlab.cycr.us:5050`. Zachowane: `glab` (CLI w dystrybucji), `repo.cycx.io` (host ISO) + jego CA anchor. Wzmianki o GitLabie w dokumentach zaktualizowane.
 - **GitHub Pages** — strona projektu: https://filip-zienowicz.github.io/boobsos/. HTML + CSS zaktualizowane o edycje dev/game, motyw kolorów kart, narzędzie boobsos-edition.
 - **Branding (F0)** — logo przeniesione z `cycrus-ksef` do `branding/logo/`, paleta i zasady w `branding/BRANDING.md`.
 - **CLAUDE.md** — dopasowany do BoobsOS (kontekst projektu + branding).
@@ -47,7 +48,7 @@ Stan pracy. Aktualizuj przy każdej istotnej zmianie (patrz CLAUDE.md → „Śl
 ## Decyzje (zatwierdzone)
 1. Środowisko graficzne: **GNOME**.
 2. Baza obrazu: **Universal Blue `base-main`** (`ghcr.io/ublue-os/base-main`).
-3. Hosting/CI: **GitLab** (rejestr + CI).
+3. Hosting/CI: **GitHub** (rejestr ghcr.io + GitHub Actions), repo: `github.com/filip-zienowicz/boobsos`.
 
 ## Podgląd VM (qcow2 + QEMU)
 - ✅ Bootowalny **qcow2** wygenerowany przez bib (`bib-output/qcow2/disk.qcow2`), konto demo `boobs`/`boobs`, autologin GNOME. Bootuje UEFI → GRUB „BoobsOS".
@@ -293,16 +294,14 @@ Runda dopracowania (4 obszary, praca na subagentach, orchestracja Opus):
      `files/etc/yum.repos.d/boobsos-logos.repo` (baseurl=file:///usr/share/boobsos-logos-repo) +
      wbudowane repo `COPY packages/boobsos-logos-repo /usr/share/boobsos-logos-repo` (walidacja runtime);
      (b) przy buildzie ISO repo jest montowane/kopiowane do kontenera bib pod tą samą ścieżką
-     (`build-iso.sh` mount; `.gitlab-ci.yml` cp). (c) `boobsos-logos` dodany do `iso/defs/boobsos-44.yaml`.
+     (`build-iso.sh` mount; workflow GitHub Actions cp). (c) `boobsos-logos` dodany do `iso/defs/boobsos-44.yaml`.
    - **Wynik (QEMU, fz-vm):** panel boczny instalatora pokazuje logo łabędzia BoobsOS + gradient marki.
      Tytuł „BOOBSOS 44 INSTALLATION" też nasz. Pełny branding instalatora. BEZ repo.cycx.io, BEZ sekretów.
 2. **Gaming edition** — domknięte luki (additywne overlay): czerwony fastfetch
    (`editions/game/files/etc/fastfetch/config.jsonc`), domyślny MangoHud (skel),
    `gamemode.ini`, hostname `boobsos-game`. (czerwony motyw, gry, GPU autorebase już były OK)
 3. **Origin auto-update — DECYZJA**: produkcyjny origin = **`ghcr.io`** (publiczny, działa
-   out-of-box, BEZ sekretu w obrazie). GitLab CI buduje jako mirror. Migracja originu na
-   `gitlab.cycr.us:5050` to udokumentowany przyszły krok, ZABLOKOWANY na: (a) upublicznieniu
-   rejestru GitLab, albo (b) scoped read-only deploy-token dostarczonym przez ZABEZPIECZONE ISO.
+   out-of-box, BEZ sekretu w obrazie). GitHub Actions buduje obrazy i publikuje na ghcr.io.
    Reguła bezpieczeństwa: NIGDY nie wlepiać pull-secretu do publicznego obrazu. Docs ujednolicone
    (README, WEBSITE-BRIEF, docs/UPDATES.md).
 4. **Cleanup + hardening**: `.gitignore` (`.claude/`, `insecure-reg.conf` + untrack),
@@ -342,10 +341,10 @@ Pakiety do zweryfikowania przed buildem (mogą nie istnieć pod podaną nazwą):
 
 ### Model docelowy
 
-- **Obrazy OCI** hostowane w self-hosted GitLab: `gitlab.cycr.us:5050/fzienowicz/boobsos` (DevOps), `/game` (Game), `/game-nvidia` (Game+NVIDIA). Origin ustawiany przy instalacji z ISO lub przez `bootc switch`.
+- **Obrazy OCI** hostowane w `ghcr.io`: `ghcr.io/filip-zienowicz/boobsos` (DevOps), `ghcr.io/filip-zienowicz/boobsos-game` (Game), `ghcr.io/filip-zienowicz/boobsos-game-nvidia` (Game+NVIDIA). Origin ustawiany przy instalacji z ISO lub przez `bootc switch`.
 - **Auto-update:** `bootc-fetch-apply-updates.timer` włączony w obrazach — cyklicznie pobiera nowy digest z naszego rejestru i stosuje atomowo przy restarcie. Bez żadnej akcji użytkownika.
 - **Pakiety RPM:** `repo.cycx.io/fedora/$releasever/$basearch/` — wpięte przez `cycrus.repo` w obrazie.
-- **CI:** każdy push do `main` na gitlab.cycr.us uruchamia pipeline → push do gitlab.cycr.us:5050. Scheduled: 05:00 UTC (DevOps) / 05:30 UTC (Game).
+- **CI (GitHub Actions):** każdy push do `main` uruchamia workflow → push do ghcr.io. Scheduled: 05:00 UTC (DevOps, `build.yml`) / 06:00 UTC (Game, `build-game.yml`).
 
 ### CA wpięte do obrazu
 
@@ -364,6 +363,6 @@ Pakiety do zweryfikowania przed buildem (mogą nie istnieć pod podaną nazwą):
 
 ### Uwagi / wątpliwości
 
-- gitlab.cycr.us używa **publicznego CA** (Sectigo/SSL2BUY), NIE prywatnego root CA. Informacja o „prywatnym CA" w briefie może dotyczyć self-signed lub wewnętrznego CA dla innych usług — dla registry TLS chain jest w pełni publiczny.
+- Self-hosted registry gitlab.cycr.us:5050 jest **wycofany** (origin przeniesiony na ghcr.io). CA anchor `cycr-us-ca.crt` (intermediate + root SSL2BUY/Sectigo) zostaje, bo `repo.cycx.io` — aktywny host pobierania ISO/artefaktów — używa tego samego łańcucha.
 - `/usr/local/share/ca-certificates/cycr.us.crt` na hoście fz-vm to cert LIŚCIA (CA:FALSE, `*.cycr.us`) — nie powinien być w anchors; nie kopiujemy go do obrazu.
 - Jeśli Fedora 44 base image już zawiera Sectigo R46 root w swoim bundlu ca-certificates, anchor jest nadmiarowy (ale bezpieczny — idempotentny).

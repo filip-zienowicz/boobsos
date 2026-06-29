@@ -77,5 +77,4 @@ Skrypt loguje `PASS`/`FAIL` dla każdego czeku i kończy:
 ## CI
 
 Testy są automatycznie uruchamiane w CI po każdym buildzie (przed push do rejestru):
-- GitHub Actions: `.github/workflows/build.yml`, `.github/workflows/build-game.yml`
-- GitLab CI: `.gitlab-ci.yml` (stage `test`)
+- GitHub Actions: `.github/workflows/build.yml`, `.github/workflows/build-game.yml` (step: Test obrazu)

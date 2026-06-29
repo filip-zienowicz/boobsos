@@ -2,7 +2,7 @@
 
 ## Skąd pochodzą aktualizacje
 
-BoobsOS jest oparty na modelu **image-based** (bootc/OCI). Obrazy OCI publikowane są publicznie na **GitHub Container Registry (ghcr.io)** — bez potrzeby logowania. CI GitLab buduje obrazy i pushuje je na ghcr.io.
+BoobsOS jest oparty na modelu **image-based** (bootc/OCI). Obrazy OCI publikowane są publicznie na **GitHub Container Registry (ghcr.io)** — bez potrzeby logowania. CI (GitHub Actions) buduje obrazy i pushuje je na ghcr.io.
 
 | Składnik | Źródło (bieżące) | Uwagi |
 |----------|-----------------|-------|
@@ -88,7 +88,7 @@ Polecenie `boobsos-edition switch` wykonuje `bootc switch` do odpowiedniego obra
 
 `ghcr.io` (GitHub Container Registry) korzysta z publicznie zaufanego certyfikatu TLS — nie wymaga żadnego dodatkowego CA anchor po stronie klienta. Standardowy `ca-certificates` w systemie wystarczy.
 
-> **Uwaga wewnętrzna:** Rejestr `gitlab.cycr.us:5050` (używany przez CI jako mirror) korzysta z certyfikatu wystawionego przez **SSL2BUY EMEA RSA Domain Validation Secure Server CA** / root **Sectigo Public Server Authentication Root R46**. Certyfikaty CA są dołączone do obrazu jako anchor (`/etc/pki/ca-trust/source/anchors/cycr-us-ca.crt`) na wypadek bezpośredniego dostępu do GitLab registry — nie jest to wymagane przy bieżącym originie ghcr.io.
+> **Uwaga wewnętrzna:** Host `repo.cycx.io` (serwer ISO i pakietów RPM) korzysta z certyfikatu wystawionego przez **SSL2BUY EMEA RSA Domain Validation Secure Server CA** / root **Sectigo Public Server Authentication Root R46**. Certyfikaty CA są dołączone do obrazu jako anchor (`/etc/pki/ca-trust/source/anchors/cycr-us-ca.crt`) — nie dotyczy ghcr.io, który używa publicznie zaufanego TLS.
 
 ---
 
@@ -106,13 +106,13 @@ Repozytorium skonfigurowane jest przez plik `files/etc/yum.repos.d/cycrus.repo` 
 
 ## Buildy CI i rejestr
 
-Każdy merge/push do brancha `main` w repozytorium `gitlab.cycr.us/fzienowicz/boobsos` uruchamia pipeline CI GitLab, który:
+Każdy merge/push do brancha `main` w repozytorium `github.com/filip-zienowicz/boobsos` uruchamia workflow GitHub Actions, który:
 
 1. Buduje obraz OCI na podstawie `Containerfile`.
 2. Pushuje nowy obraz do `ghcr.io/filip-zienowicz/boobsos` z tagami `:latest` i SHA commita.
 3. Timer na urządzeniach użytkowników wykrywa nowy digest i pobiera aktualizację.
 
-Buildy planowane (scheduled) uruchamiane są o `05:00 UTC` (edycja DevOps) i `05:30 UTC` (edycje Game), co zapewnia regularne aktualizacje bazowych warstw (upstream UBlue/Fedora).
+Buildy planowane (scheduled) uruchamiane są o `05:00 UTC` (edycja DevOps) i `06:00 UTC` (edycje Game), co zapewnia regularne aktualizacje bazowych warstw (upstream UBlue/Fedora).
 
 ---
 
@@ -121,7 +121,7 @@ Buildy planowane (scheduled) uruchamiane są o `05:00 UTC` (edycja DevOps) i `05
 ```
 Urządzenie → bootc timer → ghcr.io/filip-zienowicz/boobsos (publiczny) → nowy obraz
                                       ↑
-                              CI GitLab (gitlab.cycr.us)
+                              GitHub Actions (github.com/filip-zienowicz/boobsos)
                               buduje z Containerfile i pushuje na ghcr.io
 
 Pakiety RPM → repo.cycx.io (nasze repo)
@@ -129,13 +129,3 @@ Pakiety RPM → repo.cycx.io (nasze repo)
 
 Obrazy OCI pochodzą z `ghcr.io` (publiczny, bez logowania). Pakiety RPM — wyłącznie z infrastruktury Cycrus (`repo.cycx.io`).
 
----
-
-## Przyszłość / opcja wewnętrzna: migracja originu na GitLab registry
-
-Docelowo możliwa jest zmiana originu na rejestr self-hosted `gitlab.cycr.us:5050`, co pozwoliłoby utrzymać cały łańcuch dystrybucji wewnątrz infrastruktury Cycrus. **Warunek konieczny do spełnienia przed wdrożeniem:**
-
-- **(a)** rejestr GitLab jest publiczny (projekt ustawiony jako „public" lub rejestr dostępny anonimowo), **lub**
-- **(b)** skopowany, niemożliwy do odczytania token z ograniczonymi uprawnieniami (read-only, scoped deploy token) dostarczany jest do urządzeń klienckich za pośrednictwem **zabezpieczonego kanału ISO** (nie public repo, nie publiczny obraz).
-
-**Reguła bezpieczeństwa — bezwzględna:** żaden pull-secret, deploy token ani `glpat-*` nie może być wbudowany w publiczny obraz OCI ani commitowany do publicznego repozytorium. Naruszenie tej zasady skutkuje publicznym ujawnieniem danych uwierzytelniających.
